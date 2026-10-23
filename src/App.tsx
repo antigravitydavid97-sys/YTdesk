@@ -6,15 +6,17 @@ import {
   LayoutDashboard,
   Tv,
   CheckSquare,
-  Database,
+  SlidersHorizontal,
   Plus,
   Lightbulb,
   Zap,
-  Menu,
-  X,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react';
-import { ActiveView, ContentItem, Stage } from './types';
+import { ActiveView, ContentItem, Stage, ThemePreference } from './types';
 import { useContentStore } from './store/useContentStore';
+import { useAppleThemeSync } from './utils/themeUtils';
 import { FilterBar } from './components/FilterBar';
 import { PlatformIcon } from './components/PlatformIcon';
 import { KanbanView } from './views/KanbanView';
@@ -31,13 +33,23 @@ import { AdaptModal } from './components/AdaptModal';
 import { BackupModal } from './components/BackupModal';
 import { ConfirmDialog } from './components/ConfirmDialog';
 
-const NAV_ITEMS: { id: ActiveView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const SIDEBAR_ITEMS: {
+  id: ActiveView;
+  label: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+}[] = [
   { id: 'kanban', label: 'Tablero Kanban', icon: Kanban },
   { id: 'calendario', label: 'Calendario', icon: Calendar },
-  { id: 'lista', label: 'Lista / Tabla', icon: List },
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'lista', label: 'Lista', icon: List },
+  { id: 'dashboard', label: 'Resumen', icon: LayoutDashboard },
   { id: 'canales', label: 'Canales', icon: Tv },
   { id: 'plantillas', label: 'Plantillas', icon: CheckSquare },
+];
+
+const WORKSPACE_TABS: { id: ActiveView; label: string }[] = [
+  { id: 'kanban', label: 'Kanban' },
+  { id: 'calendario', label: 'Calendario' },
+  { id: 'lista', label: 'Lista' },
 ];
 
 export default function App() {
@@ -49,9 +61,24 @@ export default function App() {
   const setFilter = useContentStore((s) => s.setFilter);
   const moveItemStage = useContentStore((s) => s.moveItemStage);
   const deleteContentItem = useContentStore((s) => s.deleteContentItem);
+  const themePreference = useContentStore((s) => s.themePreference);
+  const setThemePreference = useContentStore((s) => s.setThemePreference);
 
-  // Estados de modales
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Sincronización en vivo del tema Claro / Oscuro / Automático
+  useAppleThemeSync(themePreference);
+
+  // Contracción de Large Title al hacer scroll
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 28);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Estados de modales (Sheets)
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
   const [defaultModalStage, setDefaultModalStage] = useState<Stage>('idea');
@@ -101,35 +128,53 @@ export default function App() {
     setItemModalOpen(true);
   };
 
-  const activeNavObj = NAV_ITEMS.find((n) => n.id === activeView) || NAV_ITEMS[0];
-  const showFilterBar =
+  const cycleThemePreference = () => {
+    const order: ThemePreference[] = ['auto', 'light', 'dark'];
+    const next = order[(order.indexOf(themePreference) + 1) % order.length];
+    setThemePreference(next);
+  };
+
+  const themeBadgeLabel: Record<ThemePreference, string> = {
+    auto: 'Tema Automático',
+    light: 'Tema Claro',
+    dark: 'Tema Oscuro',
+  };
+
+  const activeNavObj =
+    SIDEBAR_ITEMS.find((n) => n.id === activeView) || SIDEBAR_ITEMS[0];
+
+  const isWorkspaceView =
     activeView === 'kanban' ||
     activeView === 'calendario' ||
-    activeView === 'lista' ||
-    activeView === 'dashboard';
+    activeView === 'lista';
+
+  const showFilterBar = isWorkspaceView || activeView === 'dashboard';
 
   return (
-    <div className="flex min-h-screen bg-[#0B0F17] text-slate-100">
-      {/* Sidebar Desktop (260px) */}
-      <aside className="hidden w-[260px] shrink-0 flex-col border-r border-slate-800/80 bg-[#0E1422] lg:flex">
+    <div className="flex min-h-screen bg-[var(--bg)] text-[var(--label)]">
+      {/* Barra lateral estilo macOS Finder / Ajustes en Escritorio */}
+      <aside className="apple-glass hairline-r sticky top-0 hidden h-screen w-[252px] shrink-0 flex-col lg:flex">
         {/* Marca */}
-        <div className="flex h-16 items-center justify-between border-b border-slate-800/80 px-5">
+        <div className="flex h-14 items-center justify-between px-5">
           <button
             type="button"
             onClick={() => setActiveView('kanban')}
-            className="text-lg font-bold tracking-tight text-white whitespace-nowrap shrink-0"
+            className="apple-focus rounded-[6px] hig-headline font-bold tracking-tight text-[var(--label)] whitespace-nowrap shrink-0"
           >
             ContentFlow
           </button>
-          <span className="font-mono tabular-nums text-xs text-slate-400">
-            {items.length} piezas
+          <span className="font-mono tabular-nums hig-caption text-[var(--label-2)]">
+            {items.length}
           </span>
         </div>
 
         {/* Navegación principal */}
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Principal">
-          <div className="space-y-1">
-            {NAV_ITEMS.map((nav) => {
+        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-3" aria-label="Principal">
+          <div className="space-y-0.5">
+            <p className="mb-1.5 px-3 hig-caption font-semibold text-[var(--label-2)]">
+              Vistas
+            </p>
+            {SIDEBAR_ITEMS.map((nav) => {
               const Icon = nav.icon;
               const isActive = activeView === nav.id;
               return (
@@ -137,46 +182,51 @@ export default function App() {
                   key={nav.id}
                   type="button"
                   onClick={() => setActiveView(nav.id)}
-                  className={`flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  className={`apple-press apple-focus flex min-h-[38px] w-full items-center gap-2.5 rounded-[10px] px-3 py-2 hig-subhead transition-colors whitespace-nowrap shrink-0 ${
                     isActive
-                      ? 'bg-indigo-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                      ? 'bg-[var(--fill)] font-semibold text-[var(--label)]'
+                      : 'text-[var(--label-2)] hover:bg-[var(--fill)]/50 hover:text-[var(--label)]'
                   }`}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon
+                    strokeWidth={1.75}
+                    className={`h-4 w-4 shrink-0 ${
+                      isActive ? 'text-[var(--accent)]' : 'text-[var(--label-2)]'
+                    }`}
+                  />
                   <span>{nav.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Filtro directo por canal en el sidebar */}
-          <div className="border-t border-slate-800/80 pt-4">
-            <div className="flex items-center justify-between px-3">
-              <span className="text-xs font-semibold text-slate-400">
-                Mis Canales ({channels.length})
+          {/* Lista de Canales en barra lateral */}
+          <div>
+            <div className="mb-1.5 flex items-center justify-between px-3">
+              <span className="hig-caption font-semibold text-[var(--label-2)]">
+                Canales
               </span>
               <button
                 type="button"
                 onClick={() => setActiveView('canales')}
-                className="text-xs font-medium text-indigo-400 hover:text-indigo-300"
+                className="hig-caption font-medium text-[var(--accent)] hover:underline"
               >
-                Gestionar
+                Editar
               </button>
             </div>
 
-            <div className="mt-2 space-y-1">
+            <div className="space-y-0.5">
               <button
                 type="button"
                 onClick={() => setFilter('channelId', 'all')}
-                className={`flex min-h-[38px] w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                className={`apple-press flex min-h-[36px] w-full items-center justify-between rounded-[10px] px-3 py-1.5 hig-footnote transition-colors ${
                   filters.channelId === 'all'
-                    ? 'bg-slate-800/90 font-semibold text-white'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    ? 'bg-[var(--fill)] font-semibold text-[var(--label)]'
+                    : 'text-[var(--label-2)] hover:bg-[var(--fill)]/50 hover:text-[var(--label)]'
                 }`}
               >
                 <span>Todos los canales</span>
-                <span className="font-mono tabular-nums text-[11px] text-slate-400">
+                <span className="font-mono tabular-nums hig-caption text-[var(--label-2)]">
                   {items.length}
                 </span>
               </button>
@@ -194,21 +244,24 @@ export default function App() {
                         setActiveView('kanban');
                       }
                     }}
-                    className={`flex min-h-[38px] w-full items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                    className={`apple-press flex min-h-[36px] w-full items-center justify-between gap-2 rounded-[10px] px-3 py-1.5 hig-footnote transition-colors ${
                       isSelected
-                        ? 'bg-slate-800 font-semibold text-white'
-                        : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                        ? 'bg-[var(--fill)] font-semibold text-[var(--label)]'
+                        : 'text-[var(--label-2)] hover:bg-[var(--fill)]/50 hover:text-[var(--label)]'
                     }`}
                   >
                     <span className="flex min-w-0 items-center gap-2">
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: ch.color }}
+                      />
                       <PlatformIcon
                         platform={ch.plataforma}
-                        color={ch.color}
-                        className="h-3.5 w-3.5 shrink-0"
+                        className="h-3.5 w-3.5 shrink-0 text-[var(--label-2)]"
                       />
                       <span className="truncate">{ch.nombre}</span>
                     </span>
-                    <span className="font-mono tabular-nums text-[11px] text-slate-400">
+                    <span className="font-mono tabular-nums hig-caption text-[var(--label-2)]">
                       {count}
                     </span>
                   </button>
@@ -218,140 +271,131 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Pie del Sidebar: Backup JSON y Atajo */}
-        <div className="border-t border-slate-800/80 p-3 space-y-2">
+        {/* Pie del Sidebar: Ajustes, Tema y Backup JSON */}
+        <div className="hairline-t p-3 space-y-2">
           <button
             type="button"
             onClick={() => setBackupModalOpen(true)}
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-slate-700/80 bg-[#0B0F17] px-3 py-2 text-xs font-medium text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800/60 whitespace-nowrap shrink-0"
+            className="apple-press apple-focus flex min-h-[40px] w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--fill)] px-3 py-2 hig-footnote font-medium text-[var(--label)] hover:bg-[var(--fill-hover)] whitespace-nowrap shrink-0"
           >
-            <Database className="h-4 w-4 text-indigo-400" />
-            <span>Exportar / Importar JSON</span>
+            <SlidersHorizontal strokeWidth={1.75} className="h-4 w-4 text-[var(--accent)]" />
+            <span>Ajustes y Datos JSON</span>
           </button>
-          <p className="text-center text-[11px] text-slate-500">
-            Atajo rápido: pulsa <kbd className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 font-mono text-slate-300">N</kbd> para nueva idea
-          </p>
         </div>
       </aside>
 
-      {/* Drawer Móvil */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-50 flex lg:hidden"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="fixed inset-0 bg-black/75 backdrop-blur-xs"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="relative z-10 flex w-72 max-w-[85vw] flex-col bg-[#0E1422] p-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <span className="text-base font-bold text-white">ContentFlow</span>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800"
-                aria-label="Cerrar menú"
+      {/* Contenedor Principal */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Cabecera Translúcida con Large Title contraíble y Segmented Control */}
+        <header className="apple-glass hairline-b sticky top-0 z-20 px-4 transition-all duration-200 sm:px-6">
+          <div className="flex h-14 items-center justify-between gap-3">
+            {/* Izquierda: Título compacto cuando se hace scroll + Segmented Control de vistas */}
+            <div className="flex items-center gap-4 min-w-0">
+              <span
+                className={`hig-headline truncate transition-opacity duration-200 ${
+                  isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none hidden sm:inline'
+                }`}
               >
-                <X className="h-5 w-5" />
-              </button>
+                {activeNavObj.label}
+              </span>
+
+              {/* Segmented Control estilo iOS para cambiar entre Kanban / Calendario / Lista */}
+              <div
+                className="inline-flex items-center rounded-[10px] bg-[var(--fill)] p-1"
+                role="tablist"
+                aria-label="Cambiar modo de visualización"
+              >
+                {WORKSPACE_TABS.map((tab) => {
+                  const active = activeView === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setActiveView(tab.id)}
+                      className={`apple-press apple-focus rounded-[8px] px-3 py-1 hig-footnote font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
+                        active
+                          ? 'bg-[var(--surface)] text-[var(--label)] shadow-xs'
+                          : 'text-[var(--label-2)] hover:text-[var(--label)]'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <nav className="mt-4 flex-1 space-y-1 overflow-y-auto">
-              {NAV_ITEMS.map((nav) => {
-                const Icon = nav.icon;
-                const isActive = activeView === nav.id;
-                return (
-                  <button
-                    key={nav.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveView(nav.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium ${
-                      isActive
-                        ? 'bg-indigo-600 text-white'
-                        : 'text-slate-300 hover:bg-slate-800'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{nav.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div className="border-t border-slate-800 pt-3">
+            {/* Derecha: Botón rápido de tema (Sol/Luna/Auto), Ideas IA y Nueva pieza */}
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setBackupModalOpen(true);
-                }}
-                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-xs font-medium text-slate-200"
+                onClick={cycleThemePreference}
+                className="apple-press apple-focus flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--fill)] text-[var(--label)] hover:bg-[var(--fill-hover)]"
+                aria-label={themeBadgeLabel[themePreference]}
+                title={`${themeBadgeLabel[themePreference]} (clic para cambiar Claro / Oscuro / Automático)`}
               >
-                <Database className="h-4 w-4 text-indigo-400" />
-                <span>Copia de Seguridad JSON</span>
+                {themePreference === 'light' ? (
+                  <Sun strokeWidth={1.75} className="h-4 w-4" />
+                ) : themePreference === 'dark' ? (
+                  <Moon strokeWidth={1.75} className="h-4 w-4" />
+                ) : (
+                  <Monitor strokeWidth={1.75} className="h-4 w-4" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(true)}
+                className="apple-press apple-focus inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] bg-[var(--fill)] px-3 py-1.5 hig-footnote font-medium text-[var(--label)] hover:bg-[var(--fill-hover)] whitespace-nowrap shrink-0"
+              >
+                <Lightbulb
+                  strokeWidth={1.75}
+                  className="h-4 w-4"
+                  style={{ color: 'var(--sys-orange)' }}
+                />
+                <span className="hidden sm:inline">Ideas IA</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openCreateModal('idea')}
+                className="apple-press apple-focus inline-flex min-h-[36px] items-center gap-1.5 rounded-[10px] bg-[var(--accent)] px-3.5 py-1.5 hig-footnote font-semibold text-white whitespace-nowrap shrink-0"
+              >
+                <Plus strokeWidth={1.75} className="h-4 w-4" />
+                <span>Nueva pieza</span>
               </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Área principal de trabajo */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top Bar Contract: Breadcrumb contextual a la izquierda, acciones primarias a la derecha */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-800/80 bg-[#0E1422]/95 px-4 backdrop-blur-md sm:px-6">
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-800 text-slate-300 hover:bg-slate-800 lg:hidden"
-              aria-label="Abrir navegación"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-2 text-sm truncate">
-              <span className="hidden text-slate-400 sm:inline">Espacio de trabajo</span>
-              <span className="hidden text-slate-600 sm:inline" aria-hidden="true">
-                /
-              </span>
-              <h1 className="font-semibold text-slate-100 truncate">
+          {/* Large Title de Apple HIG que se contrae suavemente al hacer scroll */}
+          <div
+            className={`overflow-hidden transition-all duration-200 ${
+              isScrolled ? 'max-h-0 opacity-0 pb-0' : 'max-h-20 opacity-100 pb-3 pt-1'
+            }`}
+          >
+            <div className="flex items-baseline justify-between gap-4">
+              <h1 className="hig-large-title text-[var(--label)]">
                 {activeNavObj.label}
               </h1>
+              <button
+                type="button"
+                onClick={() => setQuickCaptureOpen(true)}
+                className="apple-press apple-focus hidden items-center gap-1.5 hig-footnote font-medium text-[var(--accent)] sm:inline-flex"
+              >
+                <Zap strokeWidth={1.75} className="h-3.5 w-3.5" />
+                <span>Captura rápida (N)</span>
+              </button>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setAiModalOpen(true)}
-              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3.5 py-2 text-xs font-semibold text-indigo-200 transition-colors hover:bg-indigo-500/20 focus-visible:outline-2 focus-visible:outline-indigo-500 whitespace-nowrap shrink-0"
-            >
-              <Lightbulb className="h-4 w-4 text-indigo-400" />
-              <span className="hidden sm:inline">Generar ideas con IA</span>
-              <span className="sm:hidden">Ideas IA</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => openCreateModal('idea')}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-indigo-400 whitespace-nowrap shrink-0"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Nueva pieza</span>
-            </button>
           </div>
         </header>
 
-        {/* Barra de filtros combinables */}
+        {/* Barra de Filtros Combinables */}
         {showFilterBar && <FilterBar />}
 
-        {/* Contenido de la vista activa */}
-        <main className="flex-1 pb-20">
+        {/* Área de Contenido Principal */}
+        <main className="flex-1 pb-24 lg:pb-12">
           {activeView === 'kanban' && (
             <KanbanView
               onNewItem={(stage) => openCreateModal(stage)}
@@ -392,21 +436,86 @@ export default function App() {
         </main>
       </div>
 
-      {/* Botón flotante de Captura Rápida de Ideas (Accesible >= 44px) */}
+      {/* Botón flotante de Captura Rápida de Ideas */}
       <button
         type="button"
         onClick={() => setQuickCaptureOpen(true)}
-        className="fixed bottom-5 right-5 z-30 inline-flex min-h-[48px] items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-600 px-5 py-3 text-xs font-semibold text-white shadow-xl transition-transform duration-150 hover:scale-105 hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-indigo-300 whitespace-nowrap shrink-0"
+        className="apple-press apple-focus fixed bottom-20 right-5 z-30 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[var(--accent)] px-4 py-2.5 hig-footnote font-semibold text-white shadow-lg lg:bottom-6 lg:right-6 whitespace-nowrap shrink-0"
+        aria-label="Captura rápida de idea (Atajo tecla N)"
         title="Captura rápida de idea (Atajo: tecla N)"
       >
-        <Zap className="h-4 w-4" />
-        <span>Captura rápida</span>
-        <kbd className="ml-1 hidden rounded bg-indigo-700/80 px-1.5 py-0.5 font-mono text-[10px] text-indigo-100 sm:inline">
-          N
-        </kbd>
+        <Zap strokeWidth={1.75} className="h-4 w-4" />
+        <span>Idea rápida</span>
       </button>
 
-      {/* Modales globales */}
+      {/* Tab Bar Inferior Translúcida en Móvil (5 destinos estilo iOS) */}
+      <nav
+        aria-label="Navegación móvil"
+        className="apple-glass hairline-t fixed bottom-0 left-0 right-0 z-30 grid h-14 grid-cols-5 items-center px-2 lg:hidden"
+      >
+        <button
+          type="button"
+          onClick={() => setActiveView('kanban')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 ${
+            activeView === 'kanban' || activeView === 'lista'
+              ? 'text-[var(--accent)]'
+              : 'text-[var(--label-2)]'
+          }`}
+        >
+          <Kanban strokeWidth={1.75} className="h-5 w-5" />
+          <span className="text-[11px] font-medium">Flujo</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveView('calendario')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 ${
+            activeView === 'calendario'
+              ? 'text-[var(--accent)]'
+              : 'text-[var(--label-2)]'
+          }`}
+        >
+          <Calendar strokeWidth={1.75} className="h-5 w-5" />
+          <span className="text-[11px] font-medium">Calendario</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveView('dashboard')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 ${
+            activeView === 'dashboard'
+              ? 'text-[var(--accent)]'
+              : 'text-[var(--label-2)]'
+          }`}
+        >
+          <LayoutDashboard strokeWidth={1.75} className="h-5 w-5" />
+          <span className="text-[11px] font-medium">Resumen</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveView('canales')}
+          className={`flex flex-col items-center justify-center gap-0.5 py-1 ${
+            activeView === 'canales' || activeView === 'plantillas'
+              ? 'text-[var(--accent)]'
+              : 'text-[var(--label-2)]'
+          }`}
+        >
+          <Tv strokeWidth={1.75} className="h-5 w-5" />
+          <span className="text-[11px] font-medium">Canales</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setBackupModalOpen(true)}
+          className="flex flex-col items-center justify-center gap-0.5 py-1 text-[var(--label-2)]"
+        >
+          <SlidersHorizontal strokeWidth={1.75} className="h-5 w-5" />
+          <span className="text-[11px] font-medium">Ajustes</span>
+        </button>
+      </nav>
+
+      {/* Modales y Hojas (Sheets) */}
       <ContentItemModal
         isOpen={itemModalOpen}
         initialItem={editingItem}
@@ -447,9 +556,9 @@ export default function App() {
 
       <ConfirmDialog
         isOpen={Boolean(deleteCandidate)}
-        title="¿Eliminar esta tarjeta de contenido?"
-        description={`Se eliminará permanentemente «${deleteCandidate?.titulo || ''}». Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar tarjeta"
+        title="¿Eliminar esta pieza?"
+        description={`Se eliminará «${deleteCandidate?.titulo || ''}» de forma permanente.`}
+        confirmLabel="Eliminar"
         variant="danger"
         onConfirm={() => {
           if (deleteCandidate) {

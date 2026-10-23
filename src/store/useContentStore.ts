@@ -11,6 +11,7 @@ import {
   Priority,
   Stage,
   SubStage,
+  ThemePreference,
 } from '../types';
 import { storageService } from '../services/storageService';
 import { getTodayISO } from '../utils/dateUtils';
@@ -22,8 +23,10 @@ interface ContentStoreState {
   templates: FormatTemplate[];
   activeView: ActiveView;
   filters: ContentFilters;
+  themePreference: ThemePreference;
 
-  // Navegación y filtros
+  // Tema, navegación y filtros
+  setThemePreference: (theme: ThemePreference) => void;
   setActiveView: (view: ActiveView) => void;
   setFilter: <K extends keyof ContentFilters>(key: K, value: ContentFilters[K]) => void;
   resetFilters: () => void;
@@ -100,6 +103,12 @@ export const useContentStore = create<ContentStoreState>((set, get) => ({
   templates: initialData.templates,
   activeView: 'kanban',
   filters: DEFAULT_FILTERS,
+  themePreference: initialData.theme,
+
+  setThemePreference: (theme) => {
+    storageService.saveThemePreference(theme);
+    set({ themePreference: theme });
+  },
 
   setActiveView: (view) => set({ activeView: view }),
 

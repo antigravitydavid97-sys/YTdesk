@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
   GripVertical,
   CopyPlus,
   ExternalLink,
-  AlertTriangle,
-  ArrowUpRight,
+  AlertCircle,
+  MoreHorizontal,
+  Pencil,
   Trash2,
+  ArrowRightCircle,
 } from 'lucide-react';
-import { Channel, ContentItem } from '../types';
-import { PlatformIcon } from './PlatformIcon';
+import { Channel, ContentItem, Stage } from '../types';
+import { PlatformIcon, getStageSystemColor } from './PlatformIcon';
 import { formatShortDateES, isDateOverdue } from '../utils/dateUtils';
+import { useContentStore } from '../store/useContentStore';
 
 interface ContentCardProps {
   item: ContentItem;
@@ -19,6 +22,7 @@ interface ContentCardProps {
   onEdit: (item: ContentItem) => void;
   onAdapt: (item: ContentItem) => void;
   onDelete: (item: ContentItem) => void;
+  onRequestPublish?: (item: ContentItem) => void;
 }
 
 export const ContentCard: React.FC<ContentCardProps> = ({
@@ -27,7 +31,10 @@ export const ContentCard: React.FC<ContentCardProps> = ({
   onEdit,
   onAdapt,
   onDelete,
+  onRequestPublish,
 }) => {
+  const moveItemStage = useContentStore((s) => s.moveItemStage);
+
   const {
     attributes,
     listeners,
@@ -43,6 +50,21 @@ export const ContentCard: React.FC<ContentCardProps> = ({
     },
   });
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const longPressTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -53,149 +75,194 @@ export const ContentCard: React.FC<ContentCardProps> = ({
   const progressPct = totalCheck > 0 ? Math.round((doneCheck / totalCheck) * 100) : 0;
   const overdue = isDateOverdue(item.fechaPlanificada, item.etapa);
 
-  const priorityTextMap: Record<ContentItem['prioridad'], { label: string; className: string }> = {
-    alta: { label: 'Prioridad alta', className: 'text-red-400 font-medium' },
-    media: { label: 'Prioridad media', className: 'text-amber-400' },
-    baja: { label: 'Prioridad baja', className: 'text-slate-400' },
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenuOpen(true);
+  };
+
+  const handleTouchStart = () => {
+    longPressTimer.current = window.setTimeout(() => {
+      setMenuOpen(true);
+    }, 520);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleStageQuickMove = (targetStage: Stage) => {
+    setMenuOpen(false);
+    if (targetStage === item.etapa) return;
+    if (targetStage === 'publicado' && onRequestPublish) {
+      onRequestPublish(item);
+    } else {
+      moveItemStage(item.id, targetStage);
+    }
+  };
+
+  const priorityLabelMap: Record<
+    ContentItem['prioridad'],
+    { text: string; colorVar: string }
+  > = {
+    alta: { text: 'Alta', colorVar: 'var(--sys-red)' },
+    media: { text: 'Media', colorVar: 'var(--sys-orange)' },
+    baja: { text: 'Baja', colorVar: 'var(--label-2)' },
   };
 
   return (
     <article
       ref={setNodeRef}
       style={style}
-      className={`group relative rounded-xl border bg-[#131B2E] p-4 transition-colors ${
-        isDragging
-          ? 'z-30 border-indigo-500 opacity-60 shadow-xl'
-          : overdue
-            ? 'border-red-500/40 hover:border-red-500/70'
-            : 'border-slate-800/90 hover:border-slate-700'
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchEnd}
+      className={`apple-card group relative p-4 select-none ${
+        isDragging ? 'apple-card-dragging z-30 opacity-90' : ''
       }`}
     >
-      {/* Cabecera: Canal con color y red + mango de arrastre */}
+      {/* Fila superior: Canal (punto de color + icono de red + nombre) + Controles */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2 text-xs">
+        <div className="flex min-w-0 items-center gap-1.5 hig-caption">
           {channel ? (
             <>
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: channel.color }}
+                aria-hidden="true"
+              />
               <PlatformIcon
                 platform={channel.plataforma}
-                color={channel.color}
-                className="h-3.5 w-3.5 shrink-0"
+                className="h-3.5 w-3.5 shrink-0 text-[var(--label-2)]"
               />
-              <span
-                className="truncate font-semibold"
-                style={{ color: channel.color }}
-              >
+              <span className="truncate font-medium text-[var(--label-2)]">
                 {channel.nombre}
               </span>
             </>
           ) : (
-            <span className="text-slate-400">Canal sin asignar</span>
+            <span className="text-[var(--label-3)]">Sin canal</span>
           )}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-0.5 shrink-0">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onAdapt(item);
+              setMenuOpen((prev) => !prev);
             }}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 opacity-80 transition-colors hover:bg-slate-800 hover:text-indigo-400 group-hover:opacity-100"
-            title="Adaptar a otra red (duplicar en Idea)"
-            aria-label="Adaptar a otra red"
+            className="apple-press apple-focus flex h-7 w-7 items-center justify-center rounded-[8px] text-[var(--label-2)] hover:bg-[var(--fill)] hover:text-[var(--label)]"
+            aria-label="Opciones de tarjeta"
+            title="Menú contextual (o clic derecho)"
           >
-            <CopyPlus className="h-3.5 w-3.5" />
+            <MoreHorizontal strokeWidth={1.75} className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(item);
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 opacity-80 transition-colors hover:bg-slate-800 hover:text-red-400 group-hover:opacity-100"
-            title="Eliminar tarjeta"
-            aria-label="Eliminar tarjeta"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+
           <button
             type="button"
             {...attributes}
             {...listeners}
-            className="flex h-7 w-7 cursor-grab items-center justify-center rounded-md text-slate-500 hover:bg-slate-800 hover:text-slate-300 active:cursor-grabbing"
-            title="Arrastrar tarjeta"
-            aria-label="Arrastrar para mover"
+            className="apple-focus flex h-7 w-7 cursor-grab items-center justify-center rounded-[8px] text-[var(--label-3)] hover:bg-[var(--fill)] hover:text-[var(--label-2)] active:cursor-grabbing"
+            aria-label="Arrastrar tarjeta"
+            title="Arrastrar para mover"
           >
-            <GripVertical className="h-4 w-4" />
+            <GripVertical strokeWidth={1.75} className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      {/* Título principal (clicable para editar) */}
+      {/* Título principal */}
       <button
         type="button"
         onClick={() => onEdit(item)}
-        className="mt-2 block w-full text-left focus-visible:outline-2 focus-visible:outline-indigo-500"
+        className="apple-focus mt-2 block w-full rounded-[6px] text-left"
       >
-        <h3 className="text-sm font-semibold leading-snug text-slate-100 group-hover:text-indigo-300 transition-colors">
+        <h3 className="hig-subhead font-semibold text-[var(--label)] transition-colors group-hover:text-[var(--accent)]">
           {item.titulo}
         </h3>
       </button>
 
-      {/* Metadatos limpios sin cajas tipo píldora (Zero-Pill Discipline) */}
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-400">
-        <span className="capitalize text-slate-300">{item.formato}</span>
+      {/* Metadatos limpios con separadores tipográficos */}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 hig-caption text-[var(--label-2)]">
+        <span className="capitalize font-medium text-[var(--label)]">
+          {item.formato}
+        </span>
+
         {item.etapa === 'proceso' && item.subEtapa && (
           <>
-            <span aria-hidden="true">·</span>
-            <span className="capitalize text-indigo-300">{item.subEtapa}</span>
+            <span aria-hidden="true" className="text-[var(--label-3)]">
+              ·
+            </span>
+            <span
+              className="capitalize font-medium"
+              style={{ color: 'var(--sys-blue)' }}
+            >
+              {item.subEtapa}
+            </span>
           </>
         )}
-        <span aria-hidden="true">·</span>
-        <span className={priorityTextMap[item.prioridad].className}>
-          {priorityTextMap[item.prioridad].label}
+
+        <span aria-hidden="true" className="text-[var(--label-3)]">
+          ·
         </span>
-        <span aria-hidden="true">·</span>
         <span
-          className={`font-mono tabular-nums inline-flex items-center gap-1 ${
-            overdue ? 'text-red-400 font-semibold' : 'text-slate-400'
-          }`}
+          className="font-medium"
+          style={{ color: priorityLabelMap[item.prioridad].colorVar }}
         >
-          {overdue && <AlertTriangle className="h-3 w-3 shrink-0 text-red-400" />}
+          {priorityLabelMap[item.prioridad].text}
+        </span>
+
+        <span aria-hidden="true" className="text-[var(--label-3)]">
+          ·
+        </span>
+        <span
+          className="inline-flex items-center gap-1 font-mono tabular-nums"
+          style={{ color: overdue ? 'var(--sys-red)' : 'var(--label-2)' }}
+        >
+          {overdue && (
+            <AlertCircle strokeWidth={1.75} className="h-3 w-3 shrink-0" />
+          )}
           {item.etapa === 'publicado' && item.fechaPublicacion
-            ? `Pub. ${formatShortDateES(item.fechaPublicacion)}`
+            ? formatShortDateES(item.fechaPublicacion)
             : formatShortDateES(item.fechaPlanificada)}
         </span>
       </div>
 
-      {/* Progreso del checklist */}
+      {/* Barra de progreso fina de checklist */}
       {totalCheck > 0 && (
         <div className="mt-3">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Checklist</span>
+          <div className="flex items-center justify-between hig-caption text-[var(--label-2)]">
+            <span>Tareas</span>
             <span className="font-mono tabular-nums">
-              {doneCheck}/{totalCheck} ({progressPct}%)
+              {doneCheck}/{totalCheck}
             </span>
           </div>
-          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className="mt-1 h-[3px] w-full overflow-hidden rounded-full bg-[var(--fill)]">
             <div
-              className={`h-full transition-transform duration-150 origin-left ${
-                progressPct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'
-              }`}
-              style={{ transform: `scaleX(${progressPct / 100})` }}
+              className="h-full origin-left transition-transform duration-200"
+              style={{
+                backgroundColor:
+                  progressPct === 100
+                    ? 'var(--sys-green)'
+                    : getStageSystemColor(item.etapa),
+                transform: `scaleX(${progressPct / 100})`,
+              }}
             />
           </div>
         </div>
       )}
 
-      {/* Etiquetas y URL si está publicado */}
+      {/* Etiquetas y enlace publicado */}
       {(item.etiquetas.length > 0 || (item.etapa === 'publicado' && item.url)) && (
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-800/70 pt-2.5 text-xs text-slate-400">
+        <div className="mt-3 flex items-center justify-between gap-2 hairline-t pt-2.5 hig-caption text-[var(--label-2)]">
           <div className="truncate">
             {item.etiquetas.map((t, idx) => (
               <React.Fragment key={t}>
-                {idx > 0 && <span className="mx-1 text-slate-600">·</span>}
-                <span className="text-slate-400">#{t}</span>
+                {idx > 0 && <span className="mx-1 text-[var(--label-3)]">·</span>}
+                <span>#{t}</span>
               </React.Fragment>
             ))}
           </div>
@@ -206,12 +273,113 @@ export const ContentCard: React.FC<ContentCardProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 hover:text-emerald-300 whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1 font-medium text-[var(--accent)] hover:underline whitespace-nowrap shrink-0"
             >
-              <span>Ver post</span>
-              <ExternalLink className="h-3 w-3" />
+              <span>Abrir</span>
+              <ExternalLink strokeWidth={1.75} className="h-3 w-3" />
             </a>
           )}
+        </div>
+      )}
+
+      {/* Menú contextual translúcido estilo iOS/macOS (Clic derecho / Pulsación larga / Botón •••) */}
+      {menuOpen && (
+        <div
+          ref={menuRef}
+          className="apple-glass-elevated hairline-border absolute right-3 top-10 z-40 w-52 overflow-hidden rounded-[14px] py-1 shadow-xl"
+          role="menu"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              onEdit(item);
+            }}
+            className="flex w-full items-center justify-between px-3.5 py-2 hig-footnote text-[var(--label)] hover:bg-[var(--fill)]"
+            role="menuitem"
+          >
+            <span>Editar contenido</span>
+            <Pencil strokeWidth={1.75} className="h-3.5 w-3.5 text-[var(--label-2)]" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              onAdapt(item);
+            }}
+            className="flex w-full items-center justify-between px-3.5 py-2 hig-footnote text-[var(--label)] hover:bg-[var(--fill)]"
+            role="menuitem"
+          >
+            <span>Adaptar a otra red</span>
+            <CopyPlus strokeWidth={1.75} className="h-3.5 w-3.5 text-[var(--label-2)]" />
+          </button>
+
+          <div className="my-1 hairline-t" />
+
+          {item.etapa !== 'idea' && (
+            <button
+              type="button"
+              onClick={() => handleStageQuickMove('idea')}
+              className="flex w-full items-center justify-between px-3.5 py-2 hig-footnote text-[var(--label)] hover:bg-[var(--fill)]"
+              role="menuitem"
+            >
+              <span>Mover a Idea</span>
+              <ArrowRightCircle
+                strokeWidth={1.75}
+                className="h-3.5 w-3.5"
+                style={{ color: 'var(--sys-orange)' }}
+              />
+            </button>
+          )}
+
+          {item.etapa !== 'proceso' && (
+            <button
+              type="button"
+              onClick={() => handleStageQuickMove('proceso')}
+              className="flex w-full items-center justify-between px-3.5 py-2 hig-footnote text-[var(--label)] hover:bg-[var(--fill)]"
+              role="menuitem"
+            >
+              <span>Mover a En Proceso</span>
+              <ArrowRightCircle
+                strokeWidth={1.75}
+                className="h-3.5 w-3.5"
+                style={{ color: 'var(--sys-blue)' }}
+              />
+            </button>
+          )}
+
+          {item.etapa !== 'publicado' && (
+            <button
+              type="button"
+              onClick={() => handleStageQuickMove('publicado')}
+              className="flex w-full items-center justify-between px-3.5 py-2 hig-footnote text-[var(--label)] hover:bg-[var(--fill)]"
+              role="menuitem"
+            >
+              <span>Marcar como Publicado</span>
+              <ArrowRightCircle
+                strokeWidth={1.75}
+                className="h-3.5 w-3.5"
+                style={{ color: 'var(--sys-green)' }}
+              />
+            </button>
+          )}
+
+          <div className="my-1 hairline-t" />
+
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              onDelete(item);
+            }}
+            className="flex w-full items-center justify-between px-3.5 py-2 hig-footnote font-medium hover:bg-[var(--fill)]"
+            style={{ color: 'var(--sys-red)' }}
+            role="menuitem"
+          >
+            <span>Eliminar</span>
+            <Trash2 strokeWidth={1.75} className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
     </article>

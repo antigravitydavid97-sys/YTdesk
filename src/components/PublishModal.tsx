@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, Calendar, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ContentItem } from '../types';
 import { getTodayISO } from '../utils/dateUtils';
 
@@ -34,93 +34,94 @@ export const PublishModal: React.FC<PublishModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="publish-modal-title"
     >
-      <div className="w-full max-w-md rounded-xl border border-slate-800 bg-[#131B2E] p-6 shadow-2xl">
-        <div className="flex items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div
+        className="animate-apple-sheet w-full max-w-md rounded-t-[20px] bg-[var(--surface-elevated)] p-6 sm:rounded-[20px]"
+        style={{ boxShadow: 'var(--sheet-shadow)' }}
+      >
+        <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-[var(--label-3)] sm:hidden" />
+
+        <div className="flex items-center justify-between gap-4 pb-4 hairline-b">
           <div>
-            <h2
-              id="publish-modal-title"
-              className="text-base font-semibold text-slate-100"
-            >
+            <h2 id="publish-modal-title" className="hig-headline text-[var(--label)]">
               Registrar publicación
             </h2>
-            <p className="mt-0.5 text-xs text-slate-400">
-              Completa la fecha oficial y el enlace del contenido publicado
+            <p className="hig-caption text-[var(--label-2)]">
+              Confirma la fecha y el enlace del contenido publicado
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+            className="apple-press apple-focus flex h-8 w-8 items-center justify-center rounded-full bg-[var(--fill)] text-[var(--label-2)] hover:text-[var(--label)]"
             aria-label="Cerrar"
           >
-            <X className="h-4 w-4" />
+            <X strokeWidth={1.75} className="h-4 w-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div className="rounded-lg border border-slate-800/80 bg-[#0B0F17] p-3">
-            <p className="text-xs text-slate-400">Contenido</p>
-            <p className="mt-0.5 text-sm font-medium text-slate-100">{item.titulo}</p>
+          <div className="rounded-[12px] bg-[var(--fill)] p-3.5">
+            <p className="hig-caption text-[var(--label-2)]">Pieza</p>
+            <p className="mt-0.5 hig-subhead font-semibold text-[var(--label)]">
+              {item.titulo}
+            </p>
           </div>
 
-          <div>
-            <label
-              htmlFor="pub-date"
-              className="block text-xs font-medium text-slate-300"
-            >
-              Fecha de publicación
-            </label>
-            <div className="relative mt-1.5">
-              <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <div className="rounded-[14px] bg-[var(--fill)] overflow-hidden">
+            <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+              <label
+                htmlFor="pub-date"
+                className="hig-subhead text-[var(--label)] shrink-0"
+              >
+                Fecha
+              </label>
               <input
                 id="pub-date"
                 type="date"
                 required
                 value={fechaPublicacion}
                 onChange={(e) => setFechaPublicacion(e.target.value)}
-                className="min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] pl-9 pr-3 text-sm text-slate-100 font-mono tabular-nums focus:border-indigo-500 focus:outline-none"
+                className="bg-transparent text-right font-mono tabular-nums hig-subhead text-[var(--accent)] focus:outline-none"
               />
             </div>
-          </div>
 
-          <div>
-            <label
-              htmlFor="pub-url"
-              className="block text-xs font-medium text-slate-300"
-            >
-              URL de la publicación (YouTube, TikTok o Instagram)
-            </label>
-            <div className="relative mt-1.5">
-              <ExternalLink className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+              <label
+                htmlFor="pub-url"
+                className="hig-subhead text-[var(--label)] shrink-0"
+              >
+                Enlace URL
+              </label>
               <input
                 id="pub-url"
                 type="url"
-                placeholder="https://youtube.com/watch?v=..."
+                placeholder="https://youtube.com/..."
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] pl-9 pr-3 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-transparent text-right hig-subhead text-[var(--label)] placeholder-[var(--label-3)] focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-2.5 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[44px] rounded-lg border border-slate-700 bg-slate-800/70 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0"
+              className="apple-press apple-focus min-h-[44px] rounded-[10px] bg-[var(--fill)] px-4 py-2.5 hig-subhead font-medium text-[var(--label)] hover:bg-[var(--fill-hover)] whitespace-nowrap shrink-0"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="min-h-[44px] rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 whitespace-nowrap shrink-0"
+              style={{ backgroundColor: 'var(--sys-green)' }}
+              className="apple-press apple-focus min-h-[44px] rounded-[10px] px-4 py-2.5 hig-subhead font-semibold text-white whitespace-nowrap shrink-0"
             >
-              Marcar como Publicado
+              Publicar
             </button>
           </div>
         </form>

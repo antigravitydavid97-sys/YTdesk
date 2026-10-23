@@ -5,14 +5,14 @@ import {
   ExternalLink,
   Pencil,
   Trash2,
-  AlertTriangle,
-  Plus,
+  AlertCircle,
+  Inbox,
 } from 'lucide-react';
 import { Channel, ContentItem, Stage } from '../types';
 import { useContentStore } from '../store/useContentStore';
 import { filterContentItems } from '../utils/filterUtils';
 import { formatShortDateES, isDateOverdue } from '../utils/dateUtils';
-import { PlatformIcon } from '../components/PlatformIcon';
+import { PlatformIcon, getStageSystemColor } from '../components/PlatformIcon';
 import { STAGES } from '../utils/constants';
 
 type SortField = 'titulo' | 'canal' | 'formato' | 'etapa' | 'prioridad' | 'fechaPlanificada';
@@ -116,242 +116,256 @@ export const ListView: React.FC<ListViewProps> = ({
 
   return (
     <div className="p-4 sm:p-6">
-      <div className="overflow-hidden rounded-xl border border-slate-800/80 bg-[#0E1422]">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-800 bg-[#131B2E] text-slate-300">
-                <th className="px-4 py-3 font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('titulo')}
-                    className="inline-flex items-center gap-1.5 hover:text-white"
-                  >
-                    <span>Título y etiquetas</span>
-                    <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('canal')}
-                    className="inline-flex items-center gap-1.5 hover:text-white"
-                  >
-                    <span>Canal</span>
-                    <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('formato')}
-                    className="inline-flex items-center gap-1.5 hover:text-white"
-                  >
-                    <span>Formato</span>
-                    <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('etapa')}
-                    className="inline-flex items-center gap-1.5 hover:text-white"
-                  >
-                    <span>Etapa</span>
-                    <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('prioridad')}
-                    className="inline-flex items-center gap-1.5 hover:text-white"
-                  >
-                    <span>Prioridad</span>
-                    <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-right font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('fechaPlanificada')}
-                    className="inline-flex items-center justify-end gap-1.5 hover:text-white"
-                  >
-                    <span>Fecha</span>
-                    <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-right font-semibold">Checklist</th>
-                <th className="px-4 py-3 text-right font-semibold">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/70">
-              {sortedItems.map((item) => {
-                const channel = channelMap.get(item.channelId);
-                const overdue = isDateOverdue(item.fechaPlanificada, item.etapa);
-                const doneCk = item.checklist.filter((c) => c.hecho).length;
-                const totalCk = item.checklist.length;
+      <div className="ios-grouped-card">
+        {sortedItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <Inbox strokeWidth={1.5} className="h-11 w-11 text-[var(--label-3)]" />
+            <p className="mt-3 hig-headline text-[var(--label)]">
+              Sin contenido para mostrar
+            </p>
+            <button
+              type="button"
+              onClick={onNewItem}
+              className="apple-press apple-focus mt-4 min-h-[44px] rounded-[10px] bg-[var(--accent)] px-5 py-2 hig-subhead font-semibold text-white"
+            >
+              Crear pieza
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left hig-footnote">
+              <thead>
+                <tr className="hairline-b text-[var(--label-2)]">
+                  <th className="px-4 py-3 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('titulo')}
+                      className="inline-flex items-center gap-1 hover:text-[var(--label)]"
+                    >
+                      <span>Título</span>
+                      <ArrowUpDown strokeWidth={1.75} className="h-3.5 w-3.5" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('canal')}
+                      className="inline-flex items-center gap-1 hover:text-[var(--label)]"
+                    >
+                      <span>Canal</span>
+                      <ArrowUpDown strokeWidth={1.75} className="h-3.5 w-3.5" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('formato')}
+                      className="inline-flex items-center gap-1 hover:text-[var(--label)]"
+                    >
+                      <span>Formato</span>
+                      <ArrowUpDown strokeWidth={1.75} className="h-3.5 w-3.5" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('etapa')}
+                      className="inline-flex items-center gap-1 hover:text-[var(--label)]"
+                    >
+                      <span>Etapa</span>
+                      <ArrowUpDown strokeWidth={1.75} className="h-3.5 w-3.5" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 font-medium">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('prioridad')}
+                      className="inline-flex items-center gap-1 hover:text-[var(--label)]"
+                    >
+                      <span>Prioridad</span>
+                      <ArrowUpDown strokeWidth={1.75} className="h-3.5 w-3.5" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-right font-medium">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort('fechaPlanificada')}
+                      className="inline-flex items-center justify-end gap-1 hover:text-[var(--label)]"
+                    >
+                      <span>Fecha</span>
+                      <ArrowUpDown strokeWidth={1.75} className="h-3.5 w-3.5" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-right font-medium">Tareas</th>
+                  <th className="px-4 py-3 text-right font-medium">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedItems.map((item) => {
+                  const channel = channelMap.get(item.channelId);
+                  const overdue = isDateOverdue(item.fechaPlanificada, item.etapa);
+                  const doneCk = item.checklist.filter((c) => c.hecho).length;
+                  const totalCk = item.checklist.length;
 
-                return (
-                  <tr
-                    key={item.id}
-                    className="transition-colors hover:bg-slate-800/35"
-                  >
-                    <td className="max-w-xs px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => onEditItem(item)}
-                        className="text-left font-semibold text-slate-100 hover:text-indigo-300"
-                      >
-                        {item.titulo}
-                      </button>
-                      {item.etiquetas.length > 0 && (
-                        <div className="mt-1 text-[11px] text-slate-400">
-                          {item.etiquetas.map((t) => `#${t}`).join(' · ')}
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {channel ? (
-                        <div className="flex items-center gap-2">
-                          <PlatformIcon
-                            platform={channel.plataforma}
-                            color={channel.color}
-                            className="h-3.5 w-3.5 shrink-0"
-                          />
-                          <span
-                            className="font-medium"
-                            style={{ color: channel.color }}
-                          >
-                            {channel.nombre}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-500">—</span>
-                      )}
-                    </td>
-
-                    <td className="px-4 py-3 capitalize text-slate-300 whitespace-nowrap">
-                      {item.formato}
-                    </td>
-
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={item.etapa}
-                          onChange={(e) =>
-                            handleStageSelect(item, e.target.value as Stage)
-                          }
-                          aria-label={`Cambiar etapa de ${item.titulo}`}
-                          className="rounded-md border border-slate-700 bg-[#0B0F17] px-2 py-1 text-xs font-medium text-slate-200 focus:border-indigo-500 focus:outline-none"
-                        >
-                          {STAGES.map((st) => (
-                            <option key={st.id} value={st.id}>
-                              {st.label}
-                            </option>
-                          ))}
-                        </select>
-                        {item.etapa === 'proceso' && item.subEtapa && (
-                          <span className="capitalize text-indigo-300">
-                            · {item.subEtapa}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-3 capitalize whitespace-nowrap">
-                      <span
-                        className={
-                          item.prioridad === 'alta'
-                            ? 'font-semibold text-red-400'
-                            : item.prioridad === 'media'
-                              ? 'text-amber-400'
-                              : 'text-slate-400'
-                        }
-                      >
-                        {item.prioridad}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-3 text-right font-mono tabular-nums whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center justify-end gap-1 ${
-                          overdue ? 'font-semibold text-red-400' : 'text-slate-300'
-                        }`}
-                      >
-                        {overdue && <AlertTriangle className="h-3.5 w-3.5 text-red-400" />}
-                        {formatShortDateES(item.fechaPlanificada)}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-300 whitespace-nowrap">
-                      {totalCk > 0 ? `${doneCk}/${totalCk}` : '—'}
-                    </td>
-
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center justify-end gap-1">
-                        {item.url && (
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex h-8 w-8 items-center justify-center rounded-md text-emerald-400 hover:bg-slate-800"
-                            title="Abrir URL publicada"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        )}
+                  return (
+                    <tr
+                      key={item.id}
+                      className="ios-row transition-colors hover:bg-[var(--fill)]/60"
+                    >
+                      <td className="max-w-xs px-4 py-3">
                         <button
                           type="button"
                           onClick={() => onEditItem(item)}
-                          className="flex h-8 w-8 items-center justify-center rounded-md text-slate-300 hover:bg-slate-800 hover:text-white"
-                          title="Editar"
+                          className="text-left hig-subhead font-semibold text-[var(--label)] hover:text-[var(--accent)]"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
+                          {item.titulo}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => onAdaptItem(item)}
-                          className="flex h-8 w-8 items-center justify-center rounded-md text-slate-300 hover:bg-slate-800 hover:text-indigo-400"
-                          title="Adaptar a otra red"
-                        >
-                          <CopyPlus className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteItem(item)}
-                          className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-800 hover:text-red-400"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                        {item.etiquetas.length > 0 && (
+                          <div className="mt-0.5 hig-caption text-[var(--label-2)]">
+                            {item.etiquetas.map((t) => `#${t}`).join(' · ')}
+                          </div>
+                        )}
+                      </td>
 
-              {sortedItems.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <p className="text-sm text-slate-400">
-                      No se encontraron piezas de contenido para mostrar en la tabla.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={onNewItem}
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Crear contenido</span>
-                    </button>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {channel ? (
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-2 w-2 shrink-0 rounded-full"
+                              style={{ backgroundColor: channel.color }}
+                            />
+                            <PlatformIcon
+                              platform={channel.plataforma}
+                              className="h-3.5 w-3.5 shrink-0 text-[var(--label-2)]"
+                            />
+                            <span className="font-medium text-[var(--label)]">
+                              {channel.nombre}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[var(--label-3)]">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3 capitalize text-[var(--label-2)] whitespace-nowrap">
+                        {item.formato}
+                      </td>
+
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: getStageSystemColor(item.etapa) }}
+                          />
+                          <select
+                            value={item.etapa}
+                            onChange={(e) =>
+                              handleStageSelect(item, e.target.value as Stage)
+                            }
+                            aria-label={`Cambiar etapa de ${item.titulo}`}
+                            className="rounded-[8px] bg-[var(--fill)] px-2.5 py-1 hig-caption font-medium text-[var(--label)] focus:outline-none cursor-pointer"
+                          >
+                            {STAGES.map((st) => (
+                              <option key={st.id} value={st.id}>
+                                {st.label}
+                              </option>
+                            ))}
+                          </select>
+                          {item.etapa === 'proceso' && item.subEtapa && (
+                            <span
+                              className="capitalize font-medium"
+                              style={{ color: 'var(--sys-blue)' }}
+                            >
+                              · {item.subEtapa}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-3 capitalize whitespace-nowrap">
+                        <span
+                          className="font-medium"
+                          style={{
+                            color:
+                              item.prioridad === 'alta'
+                                ? 'var(--sys-red)'
+                                : item.prioridad === 'media'
+                                  ? 'var(--sys-orange)'
+                                  : 'var(--label-2)',
+                          }}
+                        >
+                          {item.prioridad}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3 text-right font-mono tabular-nums whitespace-nowrap">
+                        <span
+                          className="inline-flex items-center justify-end gap-1"
+                          style={{
+                            color: overdue ? 'var(--sys-red)' : 'var(--label-2)',
+                          }}
+                        >
+                          {overdue && (
+                            <AlertCircle strokeWidth={1.75} className="h-3.5 w-3.5" />
+                          )}
+                          {formatShortDateES(item.fechaPlanificada)}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--label-2)] whitespace-nowrap">
+                        {totalCk > 0 ? `${doneCk}/${totalCk}` : '—'}
+                      </td>
+
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          {item.url && (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="apple-press flex h-8 w-8 items-center justify-center rounded-[8px] text-[var(--accent)] hover:bg-[var(--fill)]"
+                              title="Abrir URL publicada"
+                              aria-label="Abrir enlace publicado"
+                            >
+                              <ExternalLink strokeWidth={1.75} className="h-4 w-4" />
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onEditItem(item)}
+                            className="apple-press flex h-8 w-8 items-center justify-center rounded-[8px] text-[var(--label-2)] hover:bg-[var(--fill)] hover:text-[var(--label)]"
+                            title="Editar"
+                            aria-label="Editar contenido"
+                          >
+                            <Pencil strokeWidth={1.75} className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onAdaptItem(item)}
+                            className="apple-press flex h-8 w-8 items-center justify-center rounded-[8px] text-[var(--label-2)] hover:bg-[var(--fill)] hover:text-[var(--accent)]"
+                            title="Adaptar a otra red"
+                            aria-label="Adaptar a otra red"
+                          >
+                            <CopyPlus strokeWidth={1.75} className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteItem(item)}
+                            className="apple-press flex h-8 w-8 items-center justify-center rounded-[8px] text-[var(--label-2)] hover:bg-[var(--fill)] hover:text-[var(--sys-red)]"
+                            title="Eliminar"
+                            aria-label="Eliminar contenido"
+                          >
+                            <Trash2 strokeWidth={1.75} className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

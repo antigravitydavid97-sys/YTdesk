@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useContentStore } from '../store/useContentStore';
 import { FORMATS, PLATFORMS } from '../utils/constants';
 import { ContentFormat } from '../types';
@@ -51,70 +51,59 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="quick-capture-title"
     >
-      <div className="w-full max-w-md rounded-xl border border-slate-800 bg-[#131B2E] p-6 shadow-2xl">
-        <div className="flex items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-400">
-              <Zap className="h-5 w-5" />
-            </div>
-            <div>
-              <h2
-                id="quick-capture-title"
-                className="text-base font-semibold text-slate-100"
-              >
-                Captura rápida de idea
-              </h2>
-              <p className="text-xs text-slate-400">
-                Guarda al instante en la columna Idea · Atajo tecla N
-              </p>
-            </div>
+      <div
+        className="animate-apple-sheet w-full max-w-md rounded-t-[20px] bg-[var(--surface-elevated)] p-6 sm:rounded-[20px]"
+        style={{ boxShadow: 'var(--sheet-shadow)' }}
+      >
+        <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-[var(--label-3)] sm:hidden" />
+
+        <div className="flex items-center justify-between gap-4 pb-4 hairline-b">
+          <div>
+            <h2 id="quick-capture-title" className="hig-headline text-[var(--label)]">
+              Nueva idea rápida
+            </h2>
+            <p className="hig-caption text-[var(--label-2)]">
+              Se guarda directamente en la columna Idea · Atajo tecla N
+            </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+            className="apple-press apple-focus flex h-8 w-8 items-center justify-center rounded-full bg-[var(--fill)] text-[var(--label-2)] hover:text-[var(--label)]"
             aria-label="Cerrar captura rápida"
           >
-            <X className="h-4 w-4" />
+            <X strokeWidth={1.75} className="h-4 w-4" />
           </button>
         </div>
 
         {channels.length === 0 ? (
-          <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
-            Primero necesitas crear al menos un canal en la pestaña Canales para
-            asignar ideas.
+          <div className="mt-4 rounded-[12px] bg-[var(--fill)] p-4 hig-footnote text-[var(--label-2)]">
+            Primero necesitas crear al menos un canal en la sección Canales.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div>
-              <label
-                htmlFor="quick-idea-title"
-                className="block text-xs font-medium text-slate-300"
-              >
-                Título o gancho de la idea
-              </label>
-              <input
-                id="quick-idea-title"
-                type="text"
-                required
-                autoFocus
-                placeholder="Ej. 5 errores al estructurar un proyecto React..."
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-              />
-            </div>
+            <input
+              id="quick-idea-title"
+              type="text"
+              required
+              autoFocus
+              placeholder="Título o gancho de tu idea…"
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              aria-label="Título de la idea"
+              className="apple-input hig-body min-h-[46px] w-full px-4 py-2.5"
+            />
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
+            <div className="rounded-[14px] bg-[var(--fill)] overflow-hidden">
+              <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
                 <label
                   htmlFor="quick-idea-channel"
-                  className="block text-xs font-medium text-slate-300"
+                  className="hig-subhead text-[var(--label)]"
                 >
                   Canal
                 </label>
@@ -122,7 +111,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
                   id="quick-idea-channel"
                   value={channelId}
                   onChange={(e) => handleChannelChange(e.target.value)}
-                  className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="bg-transparent text-right hig-subhead font-medium text-[var(--accent)] focus:outline-none cursor-pointer"
                 >
                   {channels.map((ch) => (
                     <option key={ch.id} value={ch.id}>
@@ -132,10 +121,10 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
                 </select>
               </div>
 
-              <div>
+              <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
                 <label
                   htmlFor="quick-idea-format"
-                  className="block text-xs font-medium text-slate-300"
+                  className="hig-subhead text-[var(--label)]"
                 >
                   Formato
                 </label>
@@ -143,7 +132,7 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
                   id="quick-idea-format"
                   value={formato}
                   onChange={(e) => setFormato(e.target.value as ContentFormat)}
-                  className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="bg-transparent text-right hig-subhead font-medium text-[var(--accent)] focus:outline-none cursor-pointer"
                 >
                   {FORMATS.map((f) => (
                     <option key={f.id} value={f.id}>
@@ -154,17 +143,17 @@ export const QuickCaptureModal: React.FC<QuickCaptureModalProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="min-h-[44px] rounded-lg border border-slate-700 bg-slate-800/70 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0"
+                className="apple-press apple-focus min-h-[44px] rounded-[10px] bg-[var(--fill)] px-4 py-2.5 hig-subhead font-medium text-[var(--label)] hover:bg-[var(--fill-hover)] whitespace-nowrap shrink-0"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="min-h-[44px] rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 whitespace-nowrap shrink-0"
+                className="apple-press apple-focus min-h-[44px] rounded-[10px] bg-[var(--accent)] px-4 py-2.5 hig-subhead font-semibold text-white whitespace-nowrap shrink-0"
               >
                 Guardar idea
               </button>

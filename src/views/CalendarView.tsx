@@ -10,7 +10,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { ChevronLeft, ChevronRight, Plus, GripVertical, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, GripVertical, AlertCircle } from 'lucide-react';
 import { Channel, ContentItem } from '../types';
 import { useContentStore } from '../store/useContentStore';
 import { filterContentItems } from '../utils/filterUtils';
@@ -20,7 +20,7 @@ import {
   getWeekCalendarGrid,
   isDateOverdue,
 } from '../utils/dateUtils';
-import { PlatformIcon } from '../components/PlatformIcon';
+import { PlatformIcon, getStageSystemColor } from '../components/PlatformIcon';
 
 const WEEKDAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -49,39 +49,46 @@ const DraggableCalendarItem: React.FC<DraggableCalendarItemProps> = ({
     <div
       ref={setNodeRef}
       onClick={() => onEdit(item)}
-      className={`group flex cursor-pointer items-center justify-between gap-1.5 rounded-lg border px-2.5 py-1.5 text-left text-xs transition-colors ${
-        isDragging
-          ? 'opacity-40 border-indigo-500'
-          : overdue
-            ? 'border-red-500/40 bg-red-950/20 hover:border-red-500/70'
-            : 'border-slate-800 bg-[#131B2E] hover:border-slate-700'
+      className={`group flex cursor-pointer items-center justify-between gap-1.5 rounded-[8px] bg-[var(--fill)] px-2.5 py-1.5 text-left hig-caption transition-all hover:bg-[var(--fill-hover)] ${
+        isDragging ? 'opacity-40 scale-95' : ''
       }`}
     >
       <div className="flex min-w-0 items-center gap-1.5">
+        <span
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{
+            backgroundColor: channel?.color || getStageSystemColor(item.etapa),
+          }}
+        />
         {channel && (
           <PlatformIcon
             platform={channel.plataforma}
-            color={channel.color}
-            className="h-3 w-3 shrink-0"
+            className="h-3 w-3 shrink-0 text-[var(--label-2)]"
           />
         )}
-        <span className="truncate font-medium text-slate-100 group-hover:text-indigo-300">
+        <span className="truncate font-medium text-[var(--label)]">
           {item.titulo}
         </span>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
-        {overdue && <AlertTriangle className="h-3 w-3 text-red-400" />}
+      <div className="flex items-center gap-0.5 shrink-0">
+        {overdue && (
+          <AlertCircle
+            strokeWidth={1.75}
+            className="h-3 w-3"
+            style={{ color: 'var(--sys-red)' }}
+          />
+        )}
         <button
           type="button"
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="cursor-grab rounded p-0.5 text-slate-500 hover:bg-slate-800 hover:text-slate-300 active:cursor-grabbing"
+          className="cursor-grab rounded p-0.5 text-[var(--label-3)] hover:text-[var(--label)] active:cursor-grabbing"
           aria-label="Arrastrar a otro día"
           title="Arrastrar a otra fecha"
         >
-          <GripVertical className="h-3 w-3" />
+          <GripVertical strokeWidth={1.75} className="h-3 w-3" />
         </button>
       </div>
     </div>
@@ -115,24 +122,24 @@ const DroppableDayCell: React.FC<DroppableDayCellProps> = ({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col border-b border-r border-slate-800/80 p-2 transition-colors ${
-        isWeekMode ? 'min-h-[340px]' : 'min-h-[135px]'
+      className={`group flex flex-col hairline-b hairline-r p-2 transition-colors ${
+        isWeekMode ? 'min-h-[340px]' : 'min-h-[128px]'
       } ${
         isOver
-          ? 'bg-indigo-950/30 ring-1 ring-inset ring-indigo-500'
+          ? 'bg-[var(--accent)]/10'
           : cell.isCurrentMonth
-            ? 'bg-[#0E1422]'
-            : 'bg-[#090D16]/70 text-slate-600'
+            ? 'bg-[var(--surface)]'
+            : 'bg-[var(--surface-2)]/60'
       }`}
     >
       <div className="flex items-center justify-between gap-1">
         <span
-          className={`inline-flex h-6 min-w-[24px] items-center justify-center rounded-md px-1.5 font-mono tabular-nums text-xs font-semibold ${
+          className={`inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-1.5 font-mono tabular-nums hig-caption font-semibold ${
             cell.isToday
-              ? 'bg-indigo-600 text-white'
+              ? 'bg-[var(--sys-red)] text-white'
               : cell.isCurrentMonth
-                ? 'text-slate-300'
-                : 'text-slate-600'
+                ? 'text-[var(--label)]'
+                : 'text-[var(--label-3)]'
           }`}
         >
           {cell.dayNumber}
@@ -141,15 +148,15 @@ const DroppableDayCell: React.FC<DroppableDayCellProps> = ({
         <button
           type="button"
           onClick={() => onAddOnDate(cell.iso)}
-          className="flex h-6 w-6 items-center justify-center rounded text-slate-500 hover:bg-slate-800 hover:text-slate-200"
+          className="apple-press flex h-6 w-6 items-center justify-center rounded-full text-[var(--label-3)] opacity-0 transition-opacity hover:bg-[var(--fill)] hover:text-[var(--label)] group-hover:opacity-100 focus:opacity-100"
           title={`Planificar contenido el ${cell.iso}`}
           aria-label={`Planificar contenido el ${cell.iso}`}
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus strokeWidth={1.75} className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      <div className="mt-2 flex-1 space-y-1.5">
+      <div className="mt-1.5 flex-1 space-y-1">
         {dayItems.map((item) => (
           <DraggableCalendarItem
             key={item.id}
@@ -269,94 +276,86 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   return (
     <div className="p-4 sm:p-6 space-y-4">
-      {/* Barra de controles del calendario */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800/80 bg-[#0E1422] px-4 py-3">
+      {/* Cabecera estilo Calendario de macOS/iOS */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex items-center rounded-lg border border-slate-800 bg-[#0B0F17] p-0.5">
+          <h2 className="hig-title-2 capitalize text-[var(--label)]">
+            {periodTitle}
+          </h2>
+
+          <div className="flex items-center gap-1 rounded-[10px] bg-[var(--fill)] p-0.5">
             <button
               type="button"
               onClick={handlePrev}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-slate-300 hover:bg-slate-800"
+              className="apple-press apple-focus flex h-7 w-7 items-center justify-center rounded-[8px] text-[var(--label)] hover:bg-[var(--surface)]"
               aria-label="Periodo anterior"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft strokeWidth={1.75} className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={handleToday}
-              className="px-3 py-1 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-md whitespace-nowrap shrink-0"
+              className="apple-press apple-focus rounded-[8px] px-2.5 py-1 hig-caption font-medium text-[var(--label)] hover:bg-[var(--surface)] whitespace-nowrap shrink-0"
             >
               Hoy
             </button>
             <button
               type="button"
               onClick={handleNext}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-slate-300 hover:bg-slate-800"
+              className="apple-press apple-focus flex h-7 w-7 items-center justify-center rounded-[8px] text-[var(--label)] hover:bg-[var(--surface)]"
               aria-label="Periodo siguiente"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight strokeWidth={1.75} className="h-4 w-4" />
             </button>
           </div>
-
-          <h2 className="text-base font-semibold capitalize text-slate-100">
-            {periodTitle}
-          </h2>
         </div>
 
-        <div className="flex items-center gap-3">
-          <p className="hidden text-xs text-slate-400 md:block">
-            Arrastra cualquier pieza a otro día para reprogramar su fecha planificada
-          </p>
-
-          {/* Selector Mensual / Semanal */}
-          <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-[#0B0F17] p-1">
-            <button
-              type="button"
-              onClick={() => setMode('month')}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                mode === 'month'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Mensual
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('week')}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                mode === 'week'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Semanal
-            </button>
-          </div>
+        {/* Segmented Control iOS: Mensual / Semanal */}
+        <div className="inline-flex rounded-[10px] bg-[var(--fill)] p-1">
+          <button
+            type="button"
+            onClick={() => setMode('month')}
+            className={`apple-press apple-focus rounded-[8px] px-3.5 py-1 hig-footnote font-medium transition-all whitespace-nowrap shrink-0 ${
+              mode === 'month'
+                ? 'bg-[var(--surface)] text-[var(--label)] shadow-xs'
+                : 'text-[var(--label-2)] hover:text-[var(--label)]'
+            }`}
+          >
+            Mes
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('week')}
+            className={`apple-press apple-focus rounded-[8px] px-3.5 py-1 hig-footnote font-medium transition-all whitespace-nowrap shrink-0 ${
+              mode === 'week'
+                ? 'bg-[var(--surface)] text-[var(--label)] shadow-xs'
+                : 'text-[var(--label-2)] hover:text-[var(--label)]'
+            }`}
+          >
+            Semana
+          </button>
         </div>
       </div>
 
-      {/* Cuadrícula del calendario */}
+      {/* Cuadrícula del Calendario */}
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#0E1422]">
-          <div className="min-w-[768px]">
-            {/* Cabecera de días de la semana */}
-            <div className="grid grid-cols-7 border-b border-slate-800 bg-[#131B2E]">
+        <div className="apple-card overflow-x-auto overflow-hidden">
+          <div className="min-w-[740px]">
+            <div className="grid grid-cols-7 hairline-b bg-[var(--surface)]">
               {WEEKDAYS_ES.map((day) => (
                 <div
                   key={day}
-                  className="border-r border-slate-800/80 px-3 py-2.5 text-xs font-semibold text-slate-300 last:border-r-0"
+                  className="px-3 py-2 text-right hig-caption font-medium text-[var(--label-2)]"
                 >
                   {day}
                 </div>
               ))}
             </div>
 
-            {/* Celdas de días */}
             <div className="grid grid-cols-7">
               {cells.map((cell) => (
                 <DroppableDayCell
@@ -375,7 +374,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
         <DragOverlay>
           {activeDragItem ? (
-            <div className="rounded-lg border border-indigo-500 bg-[#131B2E] px-3 py-2 text-xs font-semibold text-white shadow-xl">
+            <div className="apple-card-dragging rounded-[10px] bg-[var(--surface-elevated)] px-3 py-1.5 hig-caption font-semibold text-[var(--label)]">
               {activeDragItem.titulo}
             </div>
           ) : null}

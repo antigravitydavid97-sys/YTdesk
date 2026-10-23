@@ -3,6 +3,7 @@ import {
   Channel,
   ContentItem,
   FormatTemplate,
+  ThemePreference,
 } from '../types';
 import {
   DEFAULT_FORMAT_TEMPLATES,
@@ -15,6 +16,7 @@ const STORAGE_KEYS = {
   ITEMS: 'contentflow_items_v1',
   TEMPLATES: 'contentflow_templates_v1',
   INITIALIZED: 'contentflow_initialized_v1',
+  THEME: 'contentflow_theme_v1',
 } as const;
 
 export interface IStorageService {
@@ -22,10 +24,13 @@ export interface IStorageService {
     channels: Channel[];
     items: ContentItem[];
     templates: FormatTemplate[];
+    theme: ThemePreference;
   };
   saveChannels(channels: Channel[]): void;
   saveItems(items: ContentItem[]): void;
   saveTemplates(templates: FormatTemplate[]): void;
+  getThemePreference(): ThemePreference;
+  saveThemePreference(theme: ThemePreference): void;
   clearAllData(): {
     channels: Channel[];
     items: ContentItem[];
@@ -60,8 +65,19 @@ class LocalStorageService implements IStorageService {
     }
   }
 
+  public getThemePreference(): ThemePreference {
+    const t = this.safeGet<ThemePreference>(STORAGE_KEYS.THEME, 'auto');
+    if (t === 'light' || t === 'dark' || t === 'auto') return t;
+    return 'auto';
+  }
+
+  public saveThemePreference(theme: ThemePreference): void {
+    this.safeSet(STORAGE_KEYS.THEME, theme);
+  }
+
   public loadInitialState() {
     const initialized = window.localStorage.getItem(STORAGE_KEYS.INITIALIZED);
+    const theme = this.getThemePreference();
 
     if (!initialized) {
       this.safeSet(STORAGE_KEYS.CHANNELS, INITIAL_SAMPLE_CHANNELS);
@@ -73,6 +89,7 @@ class LocalStorageService implements IStorageService {
         channels: INITIAL_SAMPLE_CHANNELS,
         items: INITIAL_SAMPLE_ITEMS,
         templates: DEFAULT_FORMAT_TEMPLATES,
+        theme,
       };
     }
 
@@ -83,7 +100,7 @@ class LocalStorageService implements IStorageService {
       DEFAULT_FORMAT_TEMPLATES
     );
 
-    return { channels, items, templates };
+    return { channels, items, templates, theme };
   }
 
   public saveChannels(channels: Channel[]): void {

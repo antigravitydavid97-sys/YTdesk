@@ -45,14 +45,14 @@ export const PRIORITIES: { id: Priority; label: string }[] = [
 ];
 
 export const CHANNEL_COLORS = [
-  '#EF4444', // Rojo YouTube
-  '#06B6D4', // Cyan TikTok
-  '#EC4899', // Rosa Instagram
-  '#6366F1', // Índigo
-  '#10B981', // Esmeralda
-  '#F59E0B', // Ámbar
-  '#8B5CF6', // Violeta
-  '#3B82F6', // Azul
+  '#FF3B30', // Rojo de sistema
+  '#FF9500', // Naranja de sistema
+  '#FFCC00', // Amarillo de sistema
+  '#34C759', // Verde de sistema
+  '#007AFF', // Azul de sistema
+  '#5856D6', // Índigo de sistema
+  '#AF52DE', // Morado de sistema
+  '#FF2D55', // Rosa de sistema
 ];
 
 export const DEFAULT_FORMAT_TEMPLATES: FormatTemplate[] = [
@@ -140,7 +140,7 @@ export const INITIAL_SAMPLE_CHANNELS: Channel[] = [
     nombre: 'Estudio Tech & Código',
     plataforma: 'youtube',
     handle: '@estudiotech',
-    color: '#EF4444',
+    color: '#FF3B30',
     creadoEn: offsetDate(-30),
   },
   {
@@ -148,7 +148,7 @@ export const INITIAL_SAMPLE_CHANNELS: Channel[] = [
     nombre: 'Tech en 60 Segundos',
     plataforma: 'tiktok',
     handle: '@techen60s',
-    color: '#06B6D4',
+    color: '#007AFF',
     creadoEn: offsetDate(-25),
   },
   {
@@ -156,7 +156,7 @@ export const INITIAL_SAMPLE_CHANNELS: Channel[] = [
     nombre: 'Diseño & Producto UI',
     plataforma: 'instagram',
     handle: '@disenoproducto.ui',
-    color: '#EC4899',
+    color: '#AF52DE',
     creadoEn: offsetDate(-20),
   },
 ];

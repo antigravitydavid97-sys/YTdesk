@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  CheckSquare,
+  Check,
   Plus,
   Trash2,
   X,
@@ -62,6 +62,7 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [etiquetas, setEtiquetas] = useState<string[]>([]);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [autoSyncTemplate, setAutoSyncTemplate] = useState(true);
   const [newTaskText, setNewTaskText] = useState('');
   const [notas, setNotas] = useState('');
 
@@ -81,6 +82,7 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
       setUrl(initialItem.url || '');
       setEtiquetas([...initialItem.etiquetas]);
       setChecklist(initialItem.checklist.map((c) => ({ ...c })));
+      setAutoSyncTemplate(false);
       setNotas(initialItem.notas);
     } else {
       const defaultCh = channels[0];
@@ -101,6 +103,7 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
       setFechaPublicacion(getTodayISO());
       setUrl('');
       setEtiquetas([]);
+      setAutoSyncTemplate(true);
       setChecklist(
         tpl
           ? tpl.tareas.map((texto, idx) => ({
@@ -132,8 +135,7 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
 
   const handleFormatChange = (newFmt: ContentFormat) => {
     setFormato(newFmt);
-    // Si es una tarjeta nueva y ningún ítem del checklist está completado, recargamos la plantilla automáticamente
-    if (!initialItem && checklist.every((c) => !c.hecho)) {
+    if (autoSyncTemplate && checklist.every((c) => !c.hecho)) {
       handleLoadFormatTemplate(newFmt);
     }
   };
@@ -174,7 +176,8 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
         subEtapa: etapa === 'proceso' ? subEtapa : undefined,
         prioridad,
         fechaPlanificada,
-        fechaPublicacion: etapa === 'publicado' ? fechaPublicacion || getTodayISO() : undefined,
+        fechaPublicacion:
+          etapa === 'publicado' ? fechaPublicacion || getTodayISO() : undefined,
         url: etapa === 'publicado' ? url.trim() : undefined,
         etiquetas,
         checklist,
@@ -190,7 +193,8 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
         subEtapa: etapa === 'proceso' ? subEtapa : undefined,
         prioridad,
         fechaPlanificada,
-        fechaPublicacion: etapa === 'publicado' ? fechaPublicacion || getTodayISO() : undefined,
+        fechaPublicacion:
+          etapa === 'publicado' ? fechaPublicacion || getTodayISO() : undefined,
         url: etapa === 'publicado' ? url.trim() : undefined,
         etiquetas,
         checklist,
@@ -204,25 +208,28 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="content-modal-title"
     >
-      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-xl border border-slate-800 bg-[#131B2E] shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 border-b border-slate-800/80 px-6 py-4">
+      <div
+        className="animate-apple-sheet flex max-h-[92vh] w-full max-w-2xl flex-col rounded-t-[20px] bg-[var(--surface-elevated)] sm:rounded-[20px]"
+        style={{ boxShadow: 'var(--sheet-shadow)' }}
+      >
+        <div className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-[var(--label-3)] sm:hidden" />
+
+        {/* Cabecera estilo Hoja de iOS */}
+        <div className="flex items-center justify-between gap-4 px-6 py-4 hairline-b">
           <div>
-            <h2
-              id="content-modal-title"
-              className="text-base font-semibold text-slate-100"
-            >
-              {initialItem ? 'Editar pieza de contenido' : 'Nueva pieza de contenido'}
+            <h2 id="content-modal-title" className="hig-headline text-[var(--label)]">
+              {initialItem ? 'Detalles del contenido' : 'Nueva pieza'}
             </h2>
-            <p className="text-xs text-slate-400">
-              Configura canal, formato, etapa, checklist de producción y notas
+            <p className="hig-caption text-[var(--label-2)]">
+              Organiza canal, etapa, checklist de producción y notas
             </p>
           </div>
+
           <div className="flex items-center gap-2">
             {initialItem && onRequestAdapt && (
               <button
@@ -231,63 +238,68 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
                   onClose();
                   onRequestAdapt(initialItem);
                 }}
-                className="inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0"
+                className="apple-press apple-focus inline-flex min-h-[34px] items-center gap-1.5 rounded-[10px] bg-[var(--fill)] px-3 py-1.5 hig-footnote font-medium text-[var(--accent)] hover:bg-[var(--fill-hover)] whitespace-nowrap shrink-0"
               >
-                <CopyPlus className="h-3.5 w-3.5 text-indigo-400" />
+                <CopyPlus strokeWidth={1.75} className="h-3.5 w-3.5" />
                 <span>Adaptar a otra red</span>
               </button>
             )}
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-              aria-label="Cerrar modal"
+              className="apple-press apple-focus flex h-8 w-8 items-center justify-center rounded-full bg-[var(--fill)] text-[var(--label-2)] hover:text-[var(--label)]"
+              aria-label="Cerrar"
             >
-              <X className="h-4 w-4" />
+              <X strokeWidth={1.75} className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        {/* Body */}
+        {/* Cuerpo en formato Listas Agrupadas Inset de iOS */}
         <form
           id="content-item-form"
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto p-6 space-y-5"
         >
-          {/* Título */}
-          <div>
-            <label
-              htmlFor="item-title"
-              className="block text-xs font-medium text-slate-300"
-            >
-              Título del contenido *
-            </label>
-            <input
-              id="item-title"
-              type="text"
-              required
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Ej. Cómo estructurar estado global en React con TypeScript"
-              className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-            />
+          {/* Grupo 1: Título y Descripción */}
+          <div className="rounded-[14px] bg-[var(--fill)] overflow-hidden">
+            <div className="ios-row px-4 py-3">
+              <input
+                id="item-title"
+                type="text"
+                required
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="Título de la pieza *"
+                aria-label="Título del contenido"
+                className="w-full bg-transparent hig-headline text-[var(--label)] placeholder-[var(--label-3)] focus:outline-none"
+              />
+            </div>
+            <div className="ios-row px-4 py-2.5">
+              <textarea
+                id="item-desc"
+                rows={2}
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Descripción o gancho principal (0–3s)…"
+                aria-label="Descripción"
+                className="w-full resize-none bg-transparent hig-subhead text-[var(--label)] placeholder-[var(--label-3)] focus:outline-none"
+              />
+            </div>
           </div>
 
-          {/* Canal, Formato y Prioridad */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label
-                htmlFor="item-channel"
-                className="block text-xs font-medium text-slate-300"
-              >
-                Canal *
+          {/* Grupo 2: Metadatos estilo Ajustes de iOS (Etiqueta a la izquierda, Valor a la derecha) */}
+          <div className="rounded-[14px] bg-[var(--fill)] overflow-hidden">
+            <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+              <label htmlFor="item-channel" className="hig-subhead text-[var(--label)]">
+                Canal
               </label>
               <select
                 id="item-channel"
                 required
                 value={channelId}
                 onChange={(e) => setChannelId(e.target.value)}
-                className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="bg-transparent text-right hig-subhead font-medium text-[var(--accent)] focus:outline-none cursor-pointer"
               >
                 {channels.map((ch) => (
                   <option key={ch.id} value={ch.id}>
@@ -297,18 +309,15 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="item-format"
-                className="block text-xs font-medium text-slate-300"
-              >
+            <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+              <label htmlFor="item-format" className="hig-subhead text-[var(--label)]">
                 Formato
               </label>
               <select
                 id="item-format"
                 value={formato}
                 onChange={(e) => handleFormatChange(e.target.value as ContentFormat)}
-                className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="bg-transparent text-right hig-subhead font-medium text-[var(--accent)] focus:outline-none cursor-pointer"
               >
                 {FORMATS.map((f) => (
                   <option key={f.id} value={f.id}>
@@ -318,42 +327,15 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="item-priority"
-                className="block text-xs font-medium text-slate-300"
-              >
-                Prioridad
-              </label>
-              <select
-                id="item-priority"
-                value={prioridad}
-                onChange={(e) => setPrioridad(e.target.value as Priority)}
-                className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
-              >
-                {PRIORITIES.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Etapa, Sub-etapa y Fecha Planificada */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label
-                htmlFor="item-stage"
-                className="block text-xs font-medium text-slate-300"
-              >
-                Etapa del flujo
+            <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+              <label htmlFor="item-stage" className="hig-subhead text-[var(--label)]">
+                Etapa
               </label>
               <select
                 id="item-stage"
                 value={etapa}
                 onChange={(e) => setEtapa(e.target.value as Stage)}
-                className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="bg-transparent text-right hig-subhead font-medium text-[var(--accent)] focus:outline-none cursor-pointer"
               >
                 {STAGES.map((st) => (
                   <option key={st.id} value={st.id}>
@@ -363,19 +345,16 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
               </select>
             </div>
 
-            {etapa === 'proceso' ? (
-              <div>
-                <label
-                  htmlFor="item-substage"
-                  className="block text-xs font-medium text-slate-300"
-                >
-                  Sub-etapa (En Proceso)
+            {etapa === 'proceso' && (
+              <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+                <label htmlFor="item-substage" className="hig-subhead text-[var(--label)]">
+                  Sub-etapa
                 </label>
                 <select
                   id="item-substage"
                   value={subEtapa}
                   onChange={(e) => setSubEtapa(e.target.value as SubStage)}
-                  className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="bg-transparent text-right hig-subhead font-medium text-[var(--accent)] focus:outline-none cursor-pointer"
                 >
                   {SUB_STAGES.map((sub) => (
                     <option key={sub.id} value={sub.id}>
@@ -384,14 +363,30 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
                   ))}
                 </select>
               </div>
-            ) : (
-              <div className="hidden sm:block" />
             )}
 
-            <div>
+            <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+              <label htmlFor="item-priority" className="hig-subhead text-[var(--label)]">
+                Prioridad
+              </label>
+              <select
+                id="item-priority"
+                value={prioridad}
+                onChange={(e) => setPrioridad(e.target.value as Priority)}
+                className="bg-transparent text-right hig-subhead font-medium text-[var(--accent)] focus:outline-none cursor-pointer"
+              >
+                {PRIORITIES.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
               <label
                 htmlFor="item-planned-date"
-                className="block text-xs font-medium text-slate-300"
+                className="hig-subhead text-[var(--label)]"
               >
                 Fecha planificada
               </label>
@@ -400,20 +395,46 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
                 type="date"
                 value={fechaPlanificada}
                 onChange={(e) => setFechaPlanificada(e.target.value)}
-                className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 font-mono tabular-nums focus:border-indigo-500 focus:outline-none"
+                className="bg-transparent text-right font-mono tabular-nums hig-subhead text-[var(--accent)] focus:outline-none"
               />
+            </div>
+
+            {/* Switch estilo iOS para sincronizar plantilla al cambiar formato */}
+            <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+              <span className="hig-subhead text-[var(--label)]">
+                Aplicar plantilla al cambiar formato
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={autoSyncTemplate}
+                onClick={() => setAutoSyncTemplate((v) => !v)}
+                className="relative inline-flex h-[28px] w-[48px] shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200"
+                style={{
+                  backgroundColor: autoSyncTemplate
+                    ? 'var(--sys-green)'
+                    : 'var(--label-3)',
+                }}
+                aria-label="Aplicar plantilla automáticamente al cambiar formato"
+              >
+                <span
+                  className={`h-[24px] w-[24px] rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    autoSyncTemplate ? 'translate-x-[20px]' : 'translate-x-0'
+                  }`}
+                />
+              </button>
             </div>
           </div>
 
-          {/* Campos adicionales cuando está en "Publicado" */}
+          {/* Grupo opcional si Etapa === Publicado */}
           {etapa === 'publicado' && (
-            <div className="grid grid-cols-1 gap-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 sm:grid-cols-2">
-              <div>
+            <div className="rounded-[14px] bg-[var(--fill)] overflow-hidden">
+              <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
                 <label
                   htmlFor="item-pub-date"
-                  className="block text-xs font-medium text-emerald-300"
+                  className="hig-subhead text-[var(--label)]"
                 >
-                  Fecha de publicación *
+                  Fecha de publicación
                 </label>
                 <input
                   id="item-pub-date"
@@ -421,136 +442,119 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
                   required
                   value={fechaPublicacion}
                   onChange={(e) => setFechaPublicacion(e.target.value)}
-                  className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 font-mono tabular-nums focus:border-emerald-500 focus:outline-none"
+                  className="bg-transparent text-right font-mono tabular-nums hig-subhead text-[var(--sys-green)] focus:outline-none"
                 />
               </div>
-              <div>
-                <label
-                  htmlFor="item-pub-url"
-                  className="block text-xs font-medium text-emerald-300"
-                >
-                  URL del contenido publicado
+              <div className="ios-row flex min-h-[46px] items-center justify-between gap-3 px-4 py-2">
+                <label htmlFor="item-pub-url" className="hig-subhead text-[var(--label)] shrink-0">
+                  URL publicada
                 </label>
                 <input
                   id="item-pub-url"
                   type="url"
-                  placeholder="https://..."
+                  placeholder="https://…"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="mt-1.5 min-h-[44px] w-full rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+                  className="w-full bg-transparent text-right hig-subhead text-[var(--label)] placeholder-[var(--label-3)] focus:outline-none"
                 />
               </div>
             </div>
           )}
 
-          {/* Descripción */}
+          {/* Grupo 3: Checklist de producción */}
           <div>
-            <label
-              htmlFor="item-desc"
-              className="block text-xs font-medium text-slate-300"
-            >
-              Descripción / Gancho principal
-            </label>
-            <textarea
-              id="item-desc"
-              rows={2}
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Resumen del enfoque o promesa principal de la pieza..."
-              className="mt-1.5 w-full rounded-lg border border-slate-700 bg-[#0B0F17] p-3 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Checklist de producción */}
-          <div className="rounded-lg border border-slate-800 bg-[#0B0F17] p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <CheckSquare className="h-4 w-4 text-indigo-400" />
-                <span className="text-xs font-semibold text-slate-200">
-                  Checklist de producción
-                </span>
-                <span className="font-mono tabular-nums text-xs text-slate-400">
-                  ({completedTasks}/{checklist.length})
-                </span>
-              </div>
+            <div className="mb-2 flex items-center justify-between px-1">
+              <span className="hig-caption font-medium text-[var(--label-2)]">
+                Checklist ({completedTasks}/{checklist.length})
+              </span>
               <button
                 type="button"
                 onClick={() => handleLoadFormatTemplate(formato)}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300"
+                className="inline-flex items-center gap-1 hig-caption font-medium text-[var(--accent)] hover:underline"
               >
-                <RefreshCw className="h-3.5 w-3.5" />
-                <span>Cargar plantilla de «{formato}»</span>
+                <RefreshCw strokeWidth={1.75} className="h-3 w-3" />
+                <span>Recargar plantilla «{formato}»</span>
               </button>
             </div>
 
-            <div className="mt-3 space-y-2">
+            <div className="rounded-[14px] bg-[var(--fill)] overflow-hidden">
               {checklist.map((ck) => (
                 <div
                   key={ck.id}
-                  className="flex items-center justify-between gap-2 rounded-md border border-slate-800/80 bg-[#131B2E]/60 px-3 py-2"
+                  className="ios-row flex min-h-[44px] items-center justify-between gap-3 px-4 py-2"
                 >
-                  <label className="flex flex-1 cursor-pointer items-center gap-2.5 text-xs text-slate-200">
-                    <input
-                      type="checkbox"
-                      checked={ck.hecho}
-                      onChange={() =>
-                        setChecklist(
-                          checklist.map((item) =>
-                            item.id === ck.id ? { ...item, hecho: !item.hecho } : item
-                          )
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setChecklist(
+                        checklist.map((item) =>
+                          item.id === ck.id ? { ...item, hecho: !item.hecho } : item
                         )
+                      )
+                    }
+                    className="flex flex-1 items-center gap-3 text-left hig-subhead text-[var(--label)]"
+                  >
+                    <span
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors"
+                      style={{
+                        backgroundColor: ck.hecho ? 'var(--accent)' : 'transparent',
+                        border: ck.hecho ? 'none' : '1.5px solid var(--label-3)',
+                      }}
+                    >
+                      {ck.hecho && (
+                        <Check strokeWidth={2.25} className="h-3 w-3 text-white" />
+                      )}
+                    </span>
+                    <span
+                      className={
+                        ck.hecho ? 'line-through text-[var(--label-3)]' : ''
                       }
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span className={ck.hecho ? 'line-through text-slate-500' : ''}>
+                    >
                       {ck.texto}
                     </span>
-                  </label>
+                  </button>
                   <button
                     type="button"
                     onClick={() =>
                       setChecklist(checklist.filter((item) => item.id !== ck.id))
                     }
-                    className="p-1 text-slate-500 hover:text-red-400"
+                    className="p-1 text-[var(--label-3)] hover:text-[var(--sys-red)]"
                     aria-label="Eliminar tarea"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 strokeWidth={1.75} className="h-4 w-4" />
                   </button>
                 </div>
               ))}
-            </div>
 
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={newTaskText}
-                onChange={(e) => setNewTaskText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddChecklistTask();
-                  }
-                }}
-                placeholder="Añadir paso al checklist..."
-                className="min-h-[38px] flex-1 rounded-lg border border-slate-800 bg-[#131B2E] px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleAddChecklistTask}
-                className="inline-flex min-h-[38px] items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 whitespace-nowrap shrink-0"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Añadir</span>
-              </button>
+              <div className="ios-row flex min-h-[44px] items-center gap-2 px-4 py-1.5">
+                <input
+                  type="text"
+                  value={newTaskText}
+                  onChange={(e) => setNewTaskText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddChecklistTask();
+                    }
+                  }}
+                  placeholder="Añadir paso al checklist…"
+                  className="flex-1 bg-transparent hig-subhead text-[var(--label)] placeholder-[var(--label-3)] focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddChecklistTask}
+                  className="apple-press inline-flex items-center gap-1 hig-footnote font-semibold text-[var(--accent)]"
+                >
+                  <Plus strokeWidth={1.75} className="h-4 w-4" />
+                  <span>Añadir</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Etiquetas */}
-          <div>
-            <label className="block text-xs font-medium text-slate-300">
-              Etiquetas
-            </label>
-            <div className="mt-1.5 flex gap-2">
+          {/* Grupo 4: Etiquetas y Notas */}
+          <div className="rounded-[14px] bg-[var(--fill)] overflow-hidden">
+            <div className="ios-row flex min-h-[46px] items-center gap-2 px-4 py-2">
               <input
                 type="text"
                 value={tagInput}
@@ -561,56 +565,52 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
                     handleAddTag();
                   }
                 }}
-                placeholder="Añadir etiqueta y pulsar Enter (ej. tutorial)..."
-                className="min-h-[40px] flex-1 rounded-lg border border-slate-700 bg-[#0B0F17] px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+                placeholder="Añadir etiqueta (ej. react, productividad)…"
+                aria-label="Añadir etiqueta"
+                className="flex-1 bg-transparent hig-subhead text-[var(--label)] placeholder-[var(--label-3)] focus:outline-none"
               />
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="min-h-[40px] rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 whitespace-nowrap shrink-0"
+                className="hig-footnote font-semibold text-[var(--accent)]"
               >
-                Añadir etiqueta
+                Añadir
               </button>
             </div>
+
             {etiquetas.length > 0 && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+              <div className="ios-row flex flex-wrap items-center gap-2 px-4 py-2.5 hig-footnote">
                 {etiquetas.map((tag) => (
                   <button
                     key={tag}
                     type="button"
                     onClick={() => setEtiquetas(etiquetas.filter((t) => t !== tag))}
-                    className="inline-flex items-center gap-1 rounded border border-slate-800 bg-[#0B0F17] px-2 py-1 text-xs text-slate-300 hover:border-red-500/40 hover:text-red-300"
+                    className="inline-flex items-center gap-1 text-[var(--accent)] hover:underline"
                     title="Clic para quitar etiqueta"
                   >
                     <span>#{tag}</span>
-                    <X className="h-3 w-3 text-slate-500" />
+                    <X strokeWidth={1.75} className="h-3 w-3 text-[var(--label-3)]" />
                   </button>
                 ))}
               </div>
             )}
-          </div>
 
-          {/* Notas de producción */}
-          <div>
-            <label
-              htmlFor="item-notes"
-              className="block text-xs font-medium text-slate-300"
-            >
-              Notas de producción, enlaces de referencia o guion
-            </label>
-            <textarea
-              id="item-notes"
-              rows={3}
-              value={notas}
-              onChange={(e) => setNotas(e.target.value)}
-              placeholder="Apuntes de rodaje, enlaces a recursos, minutaje, llamadas a la acción..."
-              className="mt-1.5 w-full rounded-lg border border-slate-700 bg-[#0B0F17] p-3 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-            />
+            <div className="ios-row px-4 py-3">
+              <textarea
+                id="item-notes"
+                rows={3}
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="Notas de producción, enlaces de referencia, minutaje o CTA…"
+                aria-label="Notas de producción"
+                className="w-full resize-none bg-transparent hig-subhead text-[var(--label)] placeholder-[var(--label-3)] focus:outline-none"
+              />
+            </div>
           </div>
         </form>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 border-t border-slate-800/80 px-6 py-4">
+        {/* Pie del Sheet */}
+        <div className="flex items-center justify-between gap-3 px-6 py-4 hairline-t">
           <div>
             {initialItem && onRequestDelete && (
               <button
@@ -619,27 +619,29 @@ export const ContentItemModal: React.FC<ContentItemModalProps> = ({
                   onClose();
                   onRequestDelete(initialItem);
                 }}
-                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3.5 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/20 whitespace-nowrap shrink-0"
+                style={{ color: 'var(--sys-red)' }}
+                className="apple-press apple-focus inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] bg-[var(--fill)] px-4 py-2 hig-subhead font-medium whitespace-nowrap shrink-0"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 strokeWidth={1.75} className="h-4 w-4" />
                 <span>Eliminar</span>
               </button>
             )}
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[44px] rounded-lg border border-slate-700 bg-slate-800/70 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 whitespace-nowrap shrink-0"
+              className="apple-press apple-focus min-h-[44px] rounded-[10px] bg-[var(--fill)] px-4 py-2 hig-subhead font-medium text-[var(--label)] hover:bg-[var(--fill-hover)] whitespace-nowrap shrink-0"
             >
               Cancelar
             </button>
             <button
               type="submit"
               form="content-item-form"
-              className="min-h-[44px] rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-500 whitespace-nowrap shrink-0"
+              className="apple-press apple-focus min-h-[44px] rounded-[10px] bg-[var(--accent)] px-5 py-2 hig-subhead font-semibold text-white whitespace-nowrap shrink-0"
             >
-              {initialItem ? 'Guardar cambios' : 'Crear contenido'}
+              {initialItem ? 'Guardar' : 'Crear'}
             </button>
           </div>
         </div>

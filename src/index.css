@@ -1,32 +1,295 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  }
+@custom-variant dark (&:where(.dark, .dark *));
 
-  .font-mono,
-  .tabular-nums {
-    font-family: 'JetBrains Mono', monospace;
-    font-variant-numeric: tabular-nums;
+:root {
+  --bg: #F5F5F7;
+  --surface: #FFFFFF;
+  --surface-2: #F2F2F7;
+  --surface-elevated: #FFFFFF;
+  --glass-bg: rgba(245, 245, 247, 0.78);
+  --glass-elevated: rgba(255, 255, 255, 0.86);
+  --label: #1D1D1F;
+  --label-2: rgba(60, 60, 67, 0.60);
+  --label-3: rgba(60, 60, 67, 0.30);
+  --separator: rgba(60, 60, 67, 0.18);
+  --fill: rgba(120, 120, 128, 0.12);
+  --fill-hover: rgba(120, 120, 128, 0.18);
+  --accent: #007AFF;
+  --accent-ring: rgba(0, 122, 255, 0.30);
+
+  /* Colores de sistema Apple (Modo Claro) */
+  --sys-blue: #007AFF;
+  --sys-green: #34C759;
+  --sys-orange: #FF9500;
+  --sys-yellow: #FFCC00;
+  --sys-red: #FF3B30;
+  --sys-purple: #AF52DE;
+  --sys-pink: #FF2D55;
+  --sys-indigo: #5856D6;
+
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --drag-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --sheet-shadow: 0 20px 50px rgba(0, 0, 0, 0.16);
+
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #000000;
+  --surface: #1C1C1E;
+  --surface-2: #111113;
+  --surface-elevated: #2C2C2E;
+  --glass-bg: rgba(28, 28, 30, 0.76);
+  --glass-elevated: rgba(44, 44, 46, 0.84);
+  --label: #F5F5F7;
+  --label-2: rgba(235, 235, 245, 0.60);
+  --label-3: rgba(235, 235, 245, 0.30);
+  --separator: rgba(84, 84, 88, 0.65);
+  --fill: rgba(120, 120, 128, 0.24);
+  --fill-hover: rgba(120, 120, 128, 0.34);
+  --accent: #0A84FF;
+  --accent-ring: rgba(10, 132, 255, 0.30);
+
+  /* Colores de sistema Apple (Modo Oscuro) */
+  --sys-blue: #0A84FF;
+  --sys-green: #30D158;
+  --sys-orange: #FF9F0A;
+  --sys-yellow: #FFD60A;
+  --sys-red: #FF453A;
+  --sys-purple: #BF5AF2;
+  --sys-pink: #FF375F;
+  --sys-indigo: #5E5CE6;
+
+  --card-shadow: none;
+  --drag-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+  --sheet-shadow: 0 24px 60px rgba(0, 0, 0, 0.70);
+
+  color-scheme: dark;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --label-2: rgba(29, 29, 31, 0.82);
+    --separator: rgba(60, 60, 67, 0.42);
+  }
+  .dark {
+    --label-2: rgba(245, 245, 247, 0.85);
+    --separator: rgba(142, 142, 147, 0.85);
   }
 }
 
-/* Custom subtle scrollbars for dark workspace */
+/* Transición suave de 200ms al cambiar de tema */
+html,
+body,
+.theme-transition {
+  transition: background-color 200ms cubic-bezier(0.32, 0.72, 0, 1),
+              color 200ms cubic-bezier(0.32, 0.72, 0, 1),
+              border-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Escala tipográfica Apple HIG */
+.hig-large-title {
+  font-size: 34px;
+  line-height: 41px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hig-title-1 {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hig-title-2 {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.hig-headline {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hig-body {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.hig-callout {
+  font-size: 16px;
+  line-height: 21px;
+}
+
+.hig-subhead {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.hig-footnote {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.hig-caption {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.font-mono,
+.tabular-nums {
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Materiales translúcidos (Efecto cristal Apple) */
+.apple-glass {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.apple-glass-elevated {
+  background-color: var(--glass-elevated);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .apple-glass {
+    background-color: var(--surface);
+  }
+  .apple-glass-elevated {
+    background-color: var(--surface-elevated);
+  }
+}
+
+/* Bordes hairline de 0.5px */
+.hairline-b {
+  border-bottom: 0.5px solid var(--separator);
+}
+.hairline-t {
+  border-top: 0.5px solid var(--separator);
+}
+.hairline-r {
+  border-right: 0.5px solid var(--separator);
+}
+.hairline-l {
+  border-left: 0.5px solid var(--separator);
+}
+.hairline-border {
+  border: 0.5px solid var(--separator);
+}
+
+/* Superficie de tarjeta Apple */
+.apple-card {
+  background-color: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+  transition: transform 240ms cubic-bezier(0.32, 0.72, 0, 1),
+              box-shadow 240ms cubic-bezier(0.32, 0.72, 0, 1),
+              background-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.apple-card-dragging {
+  transform: scale(1.02);
+  box-shadow: var(--drag-shadow);
+}
+
+/* Controles e Inputs estilo iOS/macOS */
+.apple-input {
+  background-color: var(--fill);
+  color: var(--label);
+  border-radius: 10px;
+  border: none;
+  transition: box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1),
+              background-color 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.apple-input::placeholder {
+  color: var(--label-3);
+}
+
+.apple-input:focus,
+.apple-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.apple-press {
+  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1),
+              background-color 200ms cubic-bezier(0.32, 0.72, 0, 1),
+              opacity 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.apple-press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Listas agrupadas Inset estilo Ajustes de iOS */
+.ios-grouped-card {
+  background-color: var(--surface);
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+.ios-row + .ios-row {
+  border-top: 0.5px solid var(--separator);
+}
+
+/* Animación de entrada para Sheets / Modales */
+@keyframes appleSheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-apple-sheet {
+  animation: appleSheetUp 280ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .apple-press:active:not(:disabled) {
+    transform: none !important;
+  }
+  .apple-card-dragging {
+    transform: none !important;
+  }
+}
+
+/* Scrollbar limpio tipo macOS */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.5);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.8);
+  background: var(--label-3);
+  border-radius: 9999px;
 }

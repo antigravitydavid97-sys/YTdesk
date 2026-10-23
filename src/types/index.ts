@@ -65,6 +65,8 @@ export interface ContentFilters {
 
 export type ActiveView = 'dashboard' | 'kanban' | 'calendario' | 'lista' | 'canales' | 'plantillas';
 
+export type ThemePreference = 'light' | 'dark' | 'auto';
+
 export interface BackupPayload {
   version: string;
   exportadoEn: string;
