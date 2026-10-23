@@ -25,7 +25,8 @@ interface ContentStoreState {
   filters: ContentFilters;
   themePreference: ThemePreference;
 
-  // Tema, navegación y filtros
+  // Tema, sesión de usuario, navegación y filtros
+  syncUserSession: (userId: string | null) => void;
   setThemePreference: (theme: ThemePreference) => void;
   setActiveView: (view: ActiveView) => void;
   setFilter: <K extends keyof ContentFilters>(key: K, value: ContentFilters[K]) => void;
@@ -104,6 +105,18 @@ export const useContentStore = create<ContentStoreState>((set, get) => ({
   activeView: 'kanban',
   filters: DEFAULT_FILTERS,
   themePreference: initialData.theme,
+
+  syncUserSession: (userId) => {
+    if (storageService.getActiveUserId() === userId) return;
+    storageService.setActiveUserId(userId);
+    const loaded = storageService.loadInitialState();
+    set({
+      channels: loaded.channels,
+      items: loaded.items,
+      templates: loaded.templates,
+      filters: DEFAULT_FILTERS,
+    });
+  },
 
   setThemePreference: (theme) => {
     storageService.saveThemePreference(theme);

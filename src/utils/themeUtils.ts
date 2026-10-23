@@ -1,10 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ThemePreference } from '../types';
 
-export function applyThemeToDOM(preference: ThemePreference): boolean {
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  const isDark =
-    preference === 'dark' || (preference === 'auto' && mediaQuery.matches);
+export function resolveThemeValue(preference: ThemePreference): 'light' | 'dark' {
+  if (preference === 'light') return 'light';
+  if (preference === 'dark') return 'dark';
+  if (typeof window !== 'undefined') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  }
+  return 'light';
+}
+
+export function applyThemeToDOM(preference: ThemePreference): 'light' | 'dark' {
+  const resolved = resolveThemeValue(preference);
+  const isDark = resolved === 'dark';
 
   const root = document.documentElement;
   if (isDark) {
@@ -20,21 +30,33 @@ export function applyThemeToDOM(preference: ThemePreference): boolean {
     meta.setAttribute('content', isDark ? '#000000' : '#F5F5F7');
   }
 
-  return isDark;
+  return resolved;
 }
 
-export function useAppleThemeSync(preference: ThemePreference) {
+export function useResolvedTheme(preference: ThemePreference): 'light' | 'dark' {
+  const [resolved, setResolved] = useState<'light' | 'dark'>(() =>
+    resolveThemeValue(preference)
+  );
+
   useEffect(() => {
-    applyThemeToDOM(preference);
+    const nextResolved = applyThemeToDOM(preference);
+    setResolved(nextResolved);
 
     if (preference !== 'auto') return;
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
-      applyThemeToDOM('auto');
+      const updated = applyThemeToDOM('auto');
+      setResolved(updated);
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [preference]);
+
+  return resolved;
+}
+
+export function useAppleThemeSync(preference: ThemePreference) {
+  useResolvedTheme(preference);
 }

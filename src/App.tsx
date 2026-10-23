@@ -32,6 +32,11 @@ import { PublishModal } from './components/PublishModal';
 import { AdaptModal } from './components/AdaptModal';
 import { BackupModal } from './components/BackupModal';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import {
+  HeaderAuthControl,
+  SidebarAuthProfile,
+} from './components/ClerkAuthSection';
+import { AuthView, AuthMode } from './views/AuthView';
 
 const SIDEBAR_ITEMS: {
   id: ActiveView;
@@ -52,6 +57,14 @@ const WORKSPACE_TABS: { id: ActiveView; label: string }[] = [
   { id: 'lista', label: 'Lista' },
 ];
 
+function getInitialAuthModeFromUrl(): AuthMode | null {
+  if (typeof window === 'undefined') return null;
+  const path = window.location.pathname;
+  if (path === '/sign-in' || path.startsWith('/sign-in/')) return 'sign-in';
+  if (path === '/sign-up' || path.startsWith('/sign-up/')) return 'sign-up';
+  return null;
+}
+
 export default function App() {
   const activeView = useContentStore((s) => s.activeView);
   const setActiveView = useContentStore((s) => s.setActiveView);
@@ -66,6 +79,37 @@ export default function App() {
 
   // Sincronización en vivo del tema Claro / Oscuro / Automático
   useAppleThemeSync(themePreference);
+
+  // Pantalla de acceso (/sign-in y /sign-up)
+  const [authScreenMode, setAuthScreenMode] = useState<AuthMode | null>(() =>
+    getInitialAuthModeFromUrl()
+  );
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setAuthScreenMode(getInitialAuthModeFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const openAuthScreen = (mode: AuthMode = 'sign-in') => {
+    setAuthScreenMode(mode);
+    const targetPath = mode === 'sign-in' ? '/sign-in' : '/sign-up';
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
+  };
+
+  const closeAuthScreen = () => {
+    setAuthScreenMode(null);
+    if (
+      window.location.pathname.startsWith('/sign-in') ||
+      window.location.pathname.startsWith('/sign-up')
+    ) {
+      window.history.pushState({}, '', '/');
+    }
+  };
 
   // Contracción de Large Title al hacer scroll
   const [isScrolled, setIsScrolled] = useState(false);
@@ -94,6 +138,7 @@ export default function App() {
   // Atajo de teclado global: N = nueva idea rápida
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (authScreenMode !== null) return;
       const target = e.target as HTMLElement | null;
       const isInputFocused =
         target &&
@@ -112,7 +157,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [authScreenMode]);
 
   const openCreateModal = (stage: Stage = 'idea', isoDate?: string) => {
     setEditingItem(null);
@@ -149,6 +194,16 @@ export default function App() {
     activeView === 'lista';
 
   const showFilterBar = isWorkspaceView || activeView === 'dashboard';
+
+  if (authScreenMode !== null) {
+    return (
+      <AuthView
+        initialMode={authScreenMode}
+        onModeChange={(mode) => openAuthScreen(mode)}
+        onBackToApp={closeAuthScreen}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-[var(--bg)] text-[var(--label)]">
@@ -271,7 +326,7 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Pie del Sidebar: Ajustes, Tema y Backup JSON */}
+        {/* Pie del Sidebar: Ajustes, Tema, Backup JSON y Perfil Clerk */}
         <div className="hairline-t p-3 space-y-2">
           <button
             type="button"
@@ -281,6 +336,7 @@ export default function App() {
             <SlidersHorizontal strokeWidth={1.75} className="h-4 w-4 text-[var(--accent)]" />
             <span>Ajustes y Datos JSON</span>
           </button>
+          <SidebarAuthProfile onOpenAuthScreen={openAuthScreen} />
         </div>
       </aside>
 
@@ -327,7 +383,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Derecha: Botón rápido de tema (Sol/Luna/Auto), Ideas IA y Nueva pieza */}
+            {/* Derecha: Botón rápido de tema (Sol/Luna/Auto), Ideas IA, Nueva pieza y Avatar Clerk (32px) */}
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
@@ -366,6 +422,8 @@ export default function App() {
                 <Plus strokeWidth={1.75} className="h-4 w-4" />
                 <span>Nueva pieza</span>
               </button>
+
+              <HeaderAuthControl onOpenAuthScreen={openAuthScreen} />
             </div>
           </div>
 

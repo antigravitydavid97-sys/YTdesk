@@ -11,7 +11,7 @@ import {
   INITIAL_SAMPLE_ITEMS,
 } from '../utils/constants';
 
-const STORAGE_KEYS = {
+const BASE_KEYS = {
   CHANNELS: 'contentflow_channels_v1',
   ITEMS: 'contentflow_items_v1',
   TEMPLATES: 'contentflow_templates_v1',
@@ -20,6 +20,8 @@ const STORAGE_KEYS = {
 } as const;
 
 export interface IStorageService {
+  setActiveUserId(userId: string | null): void;
+  getActiveUserId(): string | null;
   loadInitialState(): {
     channels: Channel[];
     items: ContentItem[];
@@ -46,6 +48,21 @@ export interface IStorageService {
 }
 
 class LocalStorageService implements IStorageService {
+  private currentUserId: string | null = null;
+
+  public setActiveUserId(userId: string | null): void {
+    this.currentUserId = userId;
+  }
+
+  public getActiveUserId(): string | null {
+    return this.currentUserId;
+  }
+
+  private resolveKey(baseKey: string): string {
+    if (!this.currentUserId) return baseKey;
+    return `${baseKey}_user_${this.currentUserId}`;
+  }
+
   private safeGet<T>(key: string, fallback: T): T {
     try {
       const raw = window.localStorage.getItem(key);
@@ -66,24 +83,29 @@ class LocalStorageService implements IStorageService {
   }
 
   public getThemePreference(): ThemePreference {
-    const t = this.safeGet<ThemePreference>(STORAGE_KEYS.THEME, 'auto');
+    const t = this.safeGet<ThemePreference>(BASE_KEYS.THEME, 'auto');
     if (t === 'light' || t === 'dark' || t === 'auto') return t;
     return 'auto';
   }
 
   public saveThemePreference(theme: ThemePreference): void {
-    this.safeSet(STORAGE_KEYS.THEME, theme);
+    this.safeSet(BASE_KEYS.THEME, theme);
   }
 
   public loadInitialState() {
-    const initialized = window.localStorage.getItem(STORAGE_KEYS.INITIALIZED);
+    const initKey = this.resolveKey(BASE_KEYS.INITIALIZED);
+    const channelsKey = this.resolveKey(BASE_KEYS.CHANNELS);
+    const itemsKey = this.resolveKey(BASE_KEYS.ITEMS);
+    const templatesKey = this.resolveKey(BASE_KEYS.TEMPLATES);
+
+    const initialized = window.localStorage.getItem(initKey);
     const theme = this.getThemePreference();
 
     if (!initialized) {
-      this.safeSet(STORAGE_KEYS.CHANNELS, INITIAL_SAMPLE_CHANNELS);
-      this.safeSet(STORAGE_KEYS.ITEMS, INITIAL_SAMPLE_ITEMS);
-      this.safeSet(STORAGE_KEYS.TEMPLATES, DEFAULT_FORMAT_TEMPLATES);
-      window.localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
+      this.safeSet(channelsKey, INITIAL_SAMPLE_CHANNELS);
+      this.safeSet(itemsKey, INITIAL_SAMPLE_ITEMS);
+      this.safeSet(templatesKey, DEFAULT_FORMAT_TEMPLATES);
+      window.localStorage.setItem(initKey, 'true');
 
       return {
         channels: INITIAL_SAMPLE_CHANNELS,
@@ -93,10 +115,10 @@ class LocalStorageService implements IStorageService {
       };
     }
 
-    const channels = this.safeGet<Channel[]>(STORAGE_KEYS.CHANNELS, []);
-    const items = this.safeGet<ContentItem[]>(STORAGE_KEYS.ITEMS, []);
+    const channels = this.safeGet<Channel[]>(channelsKey, []);
+    const items = this.safeGet<ContentItem[]>(itemsKey, []);
     const templates = this.safeGet<FormatTemplate[]>(
-      STORAGE_KEYS.TEMPLATES,
+      templatesKey,
       DEFAULT_FORMAT_TEMPLATES
     );
 
@@ -104,28 +126,28 @@ class LocalStorageService implements IStorageService {
   }
 
   public saveChannels(channels: Channel[]): void {
-    this.safeSet(STORAGE_KEYS.CHANNELS, channels);
+    this.safeSet(this.resolveKey(BASE_KEYS.CHANNELS), channels);
   }
 
   public saveItems(items: ContentItem[]): void {
-    this.safeSet(STORAGE_KEYS.ITEMS, items);
+    this.safeSet(this.resolveKey(BASE_KEYS.ITEMS), items);
   }
 
   public saveTemplates(templates: FormatTemplate[]): void {
-    this.safeSet(STORAGE_KEYS.TEMPLATES, templates);
+    this.safeSet(this.resolveKey(BASE_KEYS.TEMPLATES), templates);
   }
 
   public clearAllData() {
     const emptyChannels: Channel[] = [];
     const emptyItems: ContentItem[] = [];
     const templates = this.safeGet<FormatTemplate[]>(
-      STORAGE_KEYS.TEMPLATES,
+      this.resolveKey(BASE_KEYS.TEMPLATES),
       DEFAULT_FORMAT_TEMPLATES
     );
 
-    this.safeSet(STORAGE_KEYS.CHANNELS, emptyChannels);
-    this.safeSet(STORAGE_KEYS.ITEMS, emptyItems);
-    window.localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
+    this.safeSet(this.resolveKey(BASE_KEYS.CHANNELS), emptyChannels);
+    this.safeSet(this.resolveKey(BASE_KEYS.ITEMS), emptyItems);
+    window.localStorage.setItem(this.resolveKey(BASE_KEYS.INITIALIZED), 'true');
 
     return {
       channels: emptyChannels,
@@ -135,10 +157,10 @@ class LocalStorageService implements IStorageService {
   }
 
   public restoreSampleData() {
-    this.safeSet(STORAGE_KEYS.CHANNELS, INITIAL_SAMPLE_CHANNELS);
-    this.safeSet(STORAGE_KEYS.ITEMS, INITIAL_SAMPLE_ITEMS);
-    this.safeSet(STORAGE_KEYS.TEMPLATES, DEFAULT_FORMAT_TEMPLATES);
-    window.localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
+    this.safeSet(this.resolveKey(BASE_KEYS.CHANNELS), INITIAL_SAMPLE_CHANNELS);
+    this.safeSet(this.resolveKey(BASE_KEYS.ITEMS), INITIAL_SAMPLE_ITEMS);
+    this.safeSet(this.resolveKey(BASE_KEYS.TEMPLATES), DEFAULT_FORMAT_TEMPLATES);
+    window.localStorage.setItem(this.resolveKey(BASE_KEYS.INITIALIZED), 'true');
 
     return {
       channels: INITIAL_SAMPLE_CHANNELS,
