@@ -1,0 +1,6 @@
+{
+  "name": "ContentFlow — Gestor de Contenido Multicanal",
+  "description": "Plataforma de organización editorial y flujo de producción para creadores en YouTube, TikTok e Instagram.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
